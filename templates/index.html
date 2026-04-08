@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xưởng Studio AI - Phân Tích Kịch Bản</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e2f; color: #fff; margin: 0; padding: 20px; }
+        .container { max-width: 1300px; margin: auto; }
+        h1 { text-align: center; color: #ff79c6; margin-bottom: 5px; }
+        p.subtitle { text-align: center; color: #8be9fd; margin-bottom: 30px; }
+       
+
+        /* CSS cho khu vực Upload */
+        .upload-section { background-color: #282a36; padding: 20px; border-radius: 10px; margin-bottom: 30px; border: 2px dashed #bd93f9; text-align: center; }
+        .upload-section h3 { color: #50fa7b; margin-top: 0; }
+        .upload-section input[type="file"] { margin: 15px 0; color: #f8f8f2; }
+        .btn-analyze { background-color: #bd93f9; color: #282a36; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; transition: 0.3s; }
+        .btn-analyze:hover { background-color: #ff79c6; }
+        #analyze-status { display: block; margin-top: 10px; font-style: italic; color: #f1fa8c; }
+
+
+        .storyboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .panel-box { background-color: #282a36; padding: 15px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); border: 1px solid #44475a; }
+        .panel-header { font-size: 1.1em; font-weight: bold; color: #f1fa8c; margin-bottom: 10px; border-bottom: 1px solid #6272a4; padding-bottom: 5px; }
+       
+
+        .input-box { display: flex; flex-direction: column; margin-bottom: 10px; }
+        label { margin-bottom: 5px; color: #bd93f9; font-weight: bold; font-size: 0.9em; }
+        textarea { width: 100%; height: 80px; background-color: #44475a; color: #f8f8f2; border: 1px solid #6272a4; border-radius: 5px; padding: 8px; resize: none; font-family: inherit; font-size: 0.9em; }
+        textarea:focus { outline: none; border-color: #ff79c6; }
+       
+
+        .btn-produce { display: block; width: 100%; padding: 15px; font-size: 1.2em; font-weight: bold; color: #282a36; background-color: #50fa7b; border: none; border-radius: 8px; cursor: pointer; transition: 0.3s; margin-top: 30px; }
+        .btn-produce:hover { background-color: #40c763; }
+        .btn-produce:disabled { background-color: #6272a4; cursor: not-allowed; }
+       
+
+        #loading { text-align: center; display: none; margin-top: 20px; font-size: 1.2em; color: #f1fa8c; }
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px; }
+        .result-item { position: relative; background: #000; border-radius: 8px; overflow: hidden; border: 2px solid #6272a4; }
+        .result-img { width: 100%; display: block; }
+        .result-label { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.7); padding: 2px 8px; border-radius: 4px; font-size: 0.8em; }
+    </style>
+</head>
+<body>
+
+
+<div class="container">
+    <h1>🎬 XƯỞNG STUDIO AI</h1>
+    <p class="subtitle">Bảng Điều Khiển Giám Đốc - Chế độ Nhập Kịch Bản Tự Động</p>
+
+
+    <div class="upload-section">
+        <h3>📁 Tải lên File Kịch bản (.txt)</h3>
+        <p style="font-size: 0.9em;">Sếp có ý tưởng thô? Hãy up file text lên đây, Tổ Biên Kịch AI sẽ đọc và tự động điền vào 4 khung bên dưới!</p>
+        <input type="file" id="fileInput" accept=".txt">
+        <button class="btn-analyze" onclick="phanTichKichBan()">Đọc & Phân Tích Bằng AI</button>
+        <span id="analyze-status"></span>
+    </div>
+
+
+    <div id="storyboard" class="storyboard-grid">
+        <div class="panel-box">
+            <div class="panel-header">Khung 1</div>
+            <div class="input-box">
+                <label>🖼️ Action (EN)</label>
+                <textarea class="prompt-input"></textarea>
+            </div>
+            <div class="input-box">
+                <label>💬 Thoại (VN)</label>
+                <textarea class="thoai-input"></textarea>
+            </div>
+        </div>
+        <div class="panel-box">
+            <div class="panel-header">Khung 2</div>
+            <div class="input-box">
+                <label>🖼️ Action (EN)</label>
+                <textarea class="prompt-input"></textarea>
+            </div>
+            <div class="input-box">
+                <label>💬 Thoại (VN)</label>
+                <textarea class="thoai-input"></textarea>
+            </div>
+        </div>
+        <div class="panel-box">
+            <div class="panel-header">Khung 3</div>
+            <div class="input-box">
+                <label>🖼️ Action (EN)</label>
+                <textarea class="prompt-input"></textarea>
+            </div>
+            <div class="input-box">
+                <label>💬 Thoại (VN)</label>
+                <textarea class="thoai-input"></textarea>
+            </div>
+        </div>
+        <div class="panel-box">
+            <div class="panel-header">Khung 4</div>
+            <div class="input-box">
+                <label>🖼️ Action (EN)</label>
+                <textarea class="prompt-input"></textarea>
+            </div>
+            <div class="input-box">
+                <label>💬 Thoại (VN)</label>
+                <textarea class="thoai-input"></textarea>
+            </div>
+        </div>
+    </div>
+
+
+    <button id="btn-submit" class="btn-produce" onclick="sanXuatTruyen()">🚀 XUẤT XƯỞNG 4 KHUNG TRUYỆN!</button>
+    <div id="loading">⏳ Đang xử lý 4 khung hình... Sếp cứ thong thả uống trà!</div>
+    <div id="results" class="result-grid"></div>
+</div>
+
+
+<script>
+    // TÍNH NĂNG MỚI: Xử lý file TXT và gọi AI phân tích
+    async function phanTichKichBan() {
+        const fileInput = document.getElementById('fileInput');
+        const statusNode = document.getElementById('analyze-status');
+
+
+        if (!fileInput.files.length) {
+            alert("Sếp chưa chọn file kịch bản nào!");
+            return;
+        }
+
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+
+        reader.onload = async function(e) {
+            const rawText = e.target.result;
+            statusNode.innerText = "🧠 AI Biên Kịch đang đọc và mông má lại kịch bản... Sếp đợi vài giây nhé!";
+
+            try {
+                const response = await fetch('/api/phan_tich_kich_ban', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: rawText })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const panels = data.data;
+                    const promptInputs = document.querySelectorAll('.prompt-input');
+                    const thoaiInputs = document.querySelectorAll('.thoai-input');
+
+                    // Tự động rải dữ liệu AI phân tích được vào 4 khung
+                    panels.forEach((panel, index) => {
+                        if (index < promptInputs.length) {
+                            promptInputs[index].value = panel.mo_ta_hinh_anh;
+                            thoaiInputs[index].value = panel.thoai.join('\n');
+                        }
+                    });
+                    statusNode.innerText = "✅ Phân tích hoàn tất! Sếp có thể chỉnh sửa tay trước khi Bấm máy.";
+                    statusNode.style.color = "#50fa7b";
+                } else {
+                    statusNode.innerText = "❌ Lỗi: " + data.message;
+                    statusNode.style.color = "#ff5555";
+                }
+            } catch (error) {
+                statusNode.innerText = "❌ Lỗi kết nối đến trạm kiểm soát.";
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // Tính năng cũ: Bấm máy sản xuất
+    async function sanXuatTruyen() {
+        const btn = document.getElementById('btn-submit');
+        const loading = document.getElementById('loading');
+        const resultsDiv = document.getElementById('results');
+       
+
+        const prompts = document.querySelectorAll('.prompt-input');
+        const thoais = document.querySelectorAll('.thoai-input');
+        let panelsData = [];
+
+       
+        for(let i = 0; i < prompts.length; i++) {
+            if(prompts[i].value.trim() !== "") {
+                panelsData.push({ mo_ta: prompts[i].value, thoai: thoais[i].value });
+            }
+
+        }
+
+        if(panelsData.length === 0) {
+            alert("Kịch bản đang trống! Sếp vui lòng tải file lên hoặc nhập tay nhé.");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "HỆ THỐNG ĐANG VẼ...";
+        loading.style.display = "block";
+        resultsDiv.innerHTML = "";
+
+        try {
+            const response = await fetch('/api/san_xuat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ panels: panelsData })
+            });
+
+            const data = await response.json();
+           
+            if(data.success) {
+                data.images.forEach((imgUrl, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'result-item';
+                    div.innerHTML = `<span class="result-label">Khung ${index+1}</span>
+                        <img src="${imgUrl}?t=${new Date().getTime()}" class="result-img">`;
+                    resultsDiv.appendChild(div);
+                });
+            } else {
+                alert("❌ Lỗi hệ thống vẽ!");
+            }
+        } catch (error) {
+            alert("❌ Lỗi kết nối!");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "🚀 XUẤT XƯỞNG TRUYỆN TRANH!";
+            loading.style.display = "none";
+        }
+    }
+</script>
+</body>
+</html>
