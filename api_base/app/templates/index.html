@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Truyện Tranh AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="bg-glow"></div>
+<main class="container">
+    <header class="hero">
+        <h1>AuraComic Studio</h1>
+        <p class="subtitle">Tạo truyện tranh hiện đại bằng AI — phong cách của bạn, xuất bản nhanh chóng.</p>
+    </header>
+
+    <section class="card">
+        <h2>1) Kịch bản</h2>
+        <p class="hint">Hỗ trợ: .txt, .json, .pdf, .docx (file .doc cần chuyển sang .docx).</p>
+        <div class="row-actions">
+            <input type="file" id="scriptFileInput" accept=".txt,.json,.pdf,.doc,.docx">
+            <button class="btn btn-light" id="btnUploadScript">Tải và đọc file kịch bản</button>
+        </div>
+        <label for="scriptText">Nội dung kịch bản</label>
+        <textarea id="scriptText" class="big-textarea" placeholder="Nhập hoặc tải nội dung kịch bản tại đây..."></textarea>
+        <div class="status" id="scriptStatus"></div>
+    </section>
+
+    <section class="card">
+        <h2>2) Bộ khung (Layout)</h2>
+        <p class="hint">Tải file JSON gồm danh sách khung và aspect_ratio để áp vào truyện.</p>
+        <div class="row-actions">
+            <input type="file" id="layoutFileInput" accept=".json">
+            <button class="btn btn-light" id="btnUploadLayout">Tải bộ khung JSON</button>
+        </div>
+        <div class="status" id="layoutStatus"></div>
+    </section>
+
+    <section class="card">
+        <h2>3) Nhân vật người dùng</h2>
+        <label for="characterDescription">Mô tả nhân vật (đặc điểm, trang phục, màu tóc, biểu cảm...)</label>
+        <textarea id="characterDescription" placeholder="Ví dụ: Nhân vật 1 là bé trai tóc nâu xoăn, áo hoodie xanh lá... Nhân vật 2 là bé gái tóc bob tím, đeo kính tròn..."></textarea>
+        <p class="hint">Bạn cũng có thể tải tối đa 14 ảnh nhân vật tham chiếu (png/jpg/jpeg/webp).</p>
+        <div class="row-actions">
+            <input type="file" id="characterFiles" accept=".png,.jpg,.jpeg,.webp" multiple>
+            <button class="btn btn-light" id="btnUploadCharacters">Tải ảnh nhân vật</button>
+        </div>
+        <div class="status" id="characterStatus"></div>
+    </section>
+
+    <section class="card">
+        <div class="section-head">
+            <h2>4) Phân tích và xem khung truyện</h2>
+            <label class="frame-count-wrap" for="frameCount">Số khung:
+                <input id="frameCount" type="number" min="1" max="12" value="4">
+            </label>
+        </div>
+        <p class="hint">Sau khi AI phân tích, các trường khung chỉ để xem, không cho chỉnh sửa.</p>
+        <div class="row-actions">
+            <button class="btn btn-primary" id="btnAnalyze">Phân tích kịch bản bằng AI</button>
+        </div>
+        <div class="status" id="analyzeStatus"></div>
+
+        <div id="storyboard" class="storyboard-grid"></div>
+    </section>
+
+    <section class="card">
+        <button id="btnProduce" class="btn btn-success full">Xuất xưởng truyện tranh</button>
+        <div id="loading" class="loading">Hệ thống đang xử lý. Vui lòng chờ trong giây lát...</div>
+        <div id="episodeDownloads" class="episode-downloads"></div>
+        <div id="results" class="result-grid"></div>
+    </section>
+</main>
+    <footer class="footer muted" style="text-align:center;margin-top:24px;color:var(--text-muted);">© VoVanHien — Sinh viên DNC CNTT</footer>
+
+<script>
+    const state = {
+        layout: [],
+        frameCount: 4
+    };
+
+    const ASPECT_RATIO_OPTIONS = [
+        { value: '1:1', label: '1:1' },
+        { value: '1:4', label: '1:4' },
+        { value: '1:8', label: '1:8' },
+        { value: '2:3', label: '2:3' },
+        { value: '3:2', label: '3:2' },
+        { value: '3:4', label: '3:4' },
+        { value: '4:1', label: '4:1' },
+        { value: '4:3', label: '4:3' },
+        { value: '4:5', label: '4:5' },
+        { value: '5:4', label: '5:4' },
+        { value: '8:1', label: '8:1' },
+        { value: '9:16', label: '9:16' },
+        { value: '16:9', label: '16:9' },
+        { value: '21:9', label: '21:9' }
+    ];
+
+    const IMAGE_SIZE_OPTIONS = [
+        { value: '512', label: '512 (0.5K)' },
+        { value: '1K', label: '1K' },
+        { value: '2K', label: '2K' },
+        { value: '4K', label: '4K' }
+    ];
+
+    function setStatus(nodeId, text, isError = false) {
+        const node = document.getElementById(nodeId);
+        node.textContent = text;
+        node.classList.toggle('status-error', isError);
+        node.classList.toggle('status-success', !isError && Boolean(text));
+    }
+
+    function getAspectOptionHtml(selectedValue) {
+        return ASPECT_RATIO_OPTIONS.map(item => `
+            <option value="${item.value}" ${item.value === selectedValue ? 'selected' : ''}>${item.label}</option>
+        `).join('');
+    }
+
+    function getImageSizeOptionHtml(selectedValue) {
+        return IMAGE_SIZE_OPTIONS.map(item => `
+            <option value="${item.value}" ${item.value === selectedValue ? 'selected' : ''}>${item.label}</option>
+        `).join('');
+    }
+
+    function renderPanels(count) {
+        const storyboard = document.getElementById('storyboard');
+        storyboard.innerHTML = '';
+
+        for (let i = 0; i < count; i++) {
+            const layoutItem = state.layout[i];
+            const aspectRatio = layoutItem ? layoutItem.aspect_ratio : '16:9';
+            const imageSize = layoutItem ? layoutItem.image_size : '2K';
+
+            const card = document.createElement('div');
+            card.className = 'panel-box';
+            card.innerHTML = `
+                <div class="panel-header">Khung ${i + 1}</div>
+                <div class="input-box">
+                    <label>Tỷ lệ khung</label>
+                    <select class="aspect-select" disabled>${getAspectOptionHtml(aspectRatio)}</select>
+                </div>
+                <div class="input-box">
+                    <label>Độ phân giải</label>
+                    <select class="image-size-select" disabled>${getImageSizeOptionHtml(imageSize)}</select>
+                </div>
+                <div class="input-box">
+                    <label>Mô tả hình ảnh</label>
+                    <textarea class="prompt-input" placeholder="Mô tả cảnh, hành động, góc máy..." readonly></textarea>
+                </div>
+                <div class="input-box">
+                    <label>Thoại trái</label>
+                    <textarea class="talk-left" placeholder="Nhập thoại nhân vật bên trái..." readonly></textarea>
+                </div>
+                <div class="input-box">
+                    <label>Thoại phải</label>
+                    <textarea class="talk-right" placeholder="Nhập thoại nhân vật bên phải..." readonly></textarea>
+                </div>
+                <div class="input-box">
+                    <label>SFX (không bắt buộc)</label>
+                    <input class="sfx-input" type="text" placeholder="Ví dụ: RẦM!" readonly />
+                </div>
+            `;
+
+            storyboard.appendChild(card);
+        }
+    }
+
+    function applyLayoutToPanels() {
+        const panelCards = document.querySelectorAll('.panel-box');
+        panelCards.forEach((card, index) => {
+            if (state.layout[index]) {
+                card.querySelector('.aspect-select').value = state.layout[index].aspect_ratio || '16:9';
+                card.querySelector('.image-size-select').value = state.layout[index].image_size || '2K';
+            }
+        });
+    }
+
+    function getEffectiveFrameCount() {
+        if (state.layout.length > 0) {
+            return Math.max(1, Math.min(12, state.layout.length));
+        }
+        const frameCountInput = Number(document.getElementById('frameCount').value) || 4;
+        return Math.max(1, Math.min(12, frameCountInput));
+    }
+
+    function chunkArray(items, size) {
+        const chunks = [];
+        for (let index = 0; index < items.length; index += size) {
+            chunks.push(items.slice(index, index + size));
+        }
+        return chunks;
+    }
+
+    function getSelectedImages(maxSelected = null) {
+        const selectedImages = Array.from(document.querySelectorAll('.image-select:checked'))
+            .map((input) => input.getAttribute('data-image-url'))
+            .filter(Boolean);
+
+        if (!selectedImages.length) {
+            alert('Hãy chọn ít nhất 1 ảnh đã sinh.');
+            return null;
+        }
+
+        if (maxSelected !== null && selectedImages.length > maxSelected) {
+            alert(`Bạn chỉ được chọn tối đa ${maxSelected} khung cho thao tác này.`);
+            return null;
+        }
+
+        return selectedImages;
+    }
+
+    function renderGeneratedImages(data) {
+        const resultsDiv = document.getElementById('results');
+        const episodeDiv = document.getElementById('episodeDownloads');
+        resultsDiv.innerHTML = '';
+        episodeDiv.innerHTML = '';
+
+        const groupedImages = chunkArray(data.images || [], 6);
+        groupedImages.forEach((group, groupIndex) => {
+            const groupBox = document.createElement('div');
+            groupBox.className = 'episode-block';
+
+            const title = document.createElement('h3');
+            title.textContent = `Tập ${groupIndex + 1} (${group.length} ảnh)`;
+            groupBox.appendChild(title);
+
+            const grid = document.createElement('div');
+            grid.className = 'result-grid';
+
+            group.forEach((imgUrl, localIndex) => {
+                const globalIndex = groupIndex * 6 + localIndex;
+                const note = Array.isArray(data.notes) ? data.notes[globalIndex] : null;
+                const card = document.createElement('div');
+                card.className = 'result-item';
+                card.innerHTML = `
+                    <label class="select-image-row">
+                        <input type="checkbox" class="image-select" data-image-url="${imgUrl}">
+                        <span>Chọn ảnh</span>
+                    </label>
+                    <span class="result-label">Ảnh ${globalIndex + 1}</span>
+                    <img src="${imgUrl}?t=${Date.now()}" class="result-img" alt="Ảnh ${globalIndex + 1}">
+                    <div class="result-note">${note ? `Tỷ lệ: ${note.aspect_ratio_label} (${note.aspect_ratio_key})` : ''}</div>
+                `;
+                grid.appendChild(card);
+            });
+
+            groupBox.appendChild(grid);
+            resultsDiv.appendChild(groupBox);
+        });
+
+        const toolsBox = document.createElement('div');
+        toolsBox.className = 'episode-block';
+
+        const toolsTitle = document.createElement('h3');
+        toolsTitle.textContent = 'Công cụ xuất file';
+        toolsBox.appendChild(toolsTitle);
+
+        const actions = document.createElement('div');
+        actions.className = 'row-actions';
+
+        const exportButton = document.createElement('button');
+        exportButton.className = 'btn btn-light';
+        exportButton.type = 'button';
+        exportButton.textContent = 'Xuất PDF ảnh đã chọn';
+        exportButton.addEventListener('click', async () => {
+            const selectedImages = getSelectedImages();
+            if (!selectedImages) {
+                return;
+            }
+
+            exportButton.disabled = true;
+            exportButton.textContent = 'Đang xuất PDF...';
+
+            try {
+                const response = await fetch('/api/comic/xuat-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ images: selectedImages })
+                });
+
+                const pdfData = await response.json();
+                if (!response.ok) {
+                    alert(pdfData.detail || 'Không thể xuất PDF.');
+                    return;
+                }
+
+                const link = document.createElement('a');
+                link.className = 'btn btn-primary';
+                link.href = `${pdfData.pdf_url}?t=${Date.now()}`;
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.textContent = `Tải PDF (${pdfData.image_count} ảnh)`;
+
+                const existingLink = toolsBox.querySelector('.pdf-download-link');
+                if (existingLink) {
+                    existingLink.remove();
+                }
+                link.classList.add('pdf-download-link');
+                actions.appendChild(link);
+            } catch (error) {
+                alert('Lỗi kết nối khi xuất PDF.');
+            } finally {
+                exportButton.disabled = false;
+                exportButton.textContent = 'Xuất PDF ảnh đã chọn';
+            }
+        });
+
+        actions.appendChild(exportButton);
+
+        const exportPageButton = document.createElement('button');
+        exportPageButton.className = 'btn btn-primary';
+        exportPageButton.type = 'button';
+        exportPageButton.textContent = 'Ghép 1 trang (tối đa 8 khung)';
+        exportPageButton.addEventListener('click', async () => {
+            const selectedImages = getSelectedImages(8);
+            if (!selectedImages) {
+                return;
+            }
+
+            exportPageButton.disabled = true;
+            exportPageButton.textContent = 'Đang ghép trang...';
+
+            try {
+                const response = await fetch('/api/comic/xuat-trang', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ images: selectedImages })
+                });
+
+                const pageData = await response.json();
+                if (!response.ok) {
+                    alert(pageData.detail || 'Không thể ghép trang.');
+                    return;
+                }
+
+                const existingPreview = toolsBox.querySelector('.page-preview-wrap');
+                if (existingPreview) {
+                    existingPreview.remove();
+                }
+
+                const previewWrap = document.createElement('div');
+                previewWrap.className = 'page-preview-wrap';
+                previewWrap.innerHTML = `
+                    <a class="btn btn-light" href="${pageData.page_url}?t=${Date.now()}" target="_blank" rel="noopener">Mở trang đã ghép (${pageData.image_count} khung)</a>
+                    <img src="${pageData.page_url}?t=${Date.now()}" class="episode-preview" alt="Trang ghép">
+                `;
+                actions.insertAdjacentElement('afterend', previewWrap);
+            } catch (error) {
+                alert('Lỗi kết nối khi ghép trang.');
+            } finally {
+                exportPageButton.disabled = false;
+                exportPageButton.textContent = 'Ghép 1 trang (tối đa 8 khung)';
+            }
+        });
+
+        actions.appendChild(exportPageButton);
+        toolsBox.appendChild(actions);
+
+        if (data.manifest_url) {
+            const manifestLink = document.createElement('a');
+            manifestLink.className = 'btn btn-light';
+            manifestLink.href = `${data.manifest_url}?t=${Date.now()}`;
+            manifestLink.target = '_blank';
+            manifestLink.rel = 'noopener';
+            manifestLink.textContent = 'Tải manifest tỷ lệ khung';
+            toolsBox.appendChild(manifestLink);
+        }
+
+        episodeDiv.appendChild(toolsBox);
+    }
+
+    async function uploadScriptFile() {
+        const input = document.getElementById('scriptFileInput');
+        if (!input.files.length) {
+            alert('Vui lòng chọn file kịch bản trước.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+        setStatus('scriptStatus', 'Đang đọc file kịch bản...');
+
+        try {
+            const response = await fetch('/api/comic/upload-kich-ban', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                setStatus('scriptStatus', data.detail || 'Không đọc được file kịch bản.', true);
+                return;
+            }
+
+            document.getElementById('scriptText').value = data.text;
+            setStatus('scriptStatus', 'Đã nạp kịch bản thành công.');
+        } catch (error) {
+            setStatus('scriptStatus', 'Lỗi kết nối khi tải file kịch bản.', true);
+        }
+    }
+
+    async function uploadLayoutFile() {
+        const input = document.getElementById('layoutFileInput');
+        if (!input.files.length) {
+            alert('Vui lòng chọn file layout JSON.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+        setStatus('layoutStatus', 'Đang đọc layout...');
+
+        try {
+            const response = await fetch('/api/comic/upload-layout', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                setStatus('layoutStatus', data.detail || 'Không đọc được layout.', true);
+                return;
+            }
+
+            state.layout = data.layout || [];
+            state.frameCount = Math.max(1, Math.min(12, state.layout.length || state.frameCount));
+            const frameCountNode = document.getElementById('frameCount');
+            frameCountNode.value = state.frameCount;
+            frameCountNode.disabled = state.layout.length > 0;
+            renderPanels(state.frameCount);
+            applyLayoutToPanels();
+            setStatus('layoutStatus', `Đã nạp ${state.layout.length} khung từ file layout.`);
+        } catch (error) {
+            setStatus('layoutStatus', 'Lỗi kết nối khi tải layout.', true);
+        }
+    }
+
+    async function uploadCharacterImages() {
+        const input = document.getElementById('characterFiles');
+        if (!input.files.length) {
+            alert('Vui lòng chọn ảnh nhân vật trước.');
+            return;
+        }
+
+        if (input.files.length > 14) {
+            alert('Chỉ hỗ trợ tối đa 14 ảnh nhân vật.');
+            return;
+        }
+
+        const formData = new FormData();
+        Array.from(input.files).forEach(file => formData.append('files', file));
+        setStatus('characterStatus', 'Đang tải ảnh nhân vật...');
+
+        try {
+            const response = await fetch('/api/comic/upload-nhan-vat', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                setStatus('characterStatus', data.detail || 'Tải ảnh thất bại.', true);
+                return;
+            }
+
+            setStatus('characterStatus', data.message || 'Đã tải ảnh nhân vật.');
+        } catch (error) {
+            setStatus('characterStatus', 'Lỗi kết nối khi tải ảnh nhân vật.', true);
+        }
+    }
+
+    async function analyzeScript() {
+        const scriptText = document.getElementById('scriptText').value.trim();
+        if (!scriptText) {
+            alert('Vui lòng nhập hoặc tải kịch bản trước khi phân tích.');
+            return;
+        }
+
+        state.frameCount = getEffectiveFrameCount();
+        document.getElementById('frameCount').value = state.frameCount;
+        renderPanels(state.frameCount);
+        applyLayoutToPanels();
+        setStatus('analyzeStatus', 'AI đang phân tích kịch bản...');
+
+        try {
+            const response = await fetch('/api/comic/phan_tich_kich_ban', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: scriptText, frames: state.frameCount })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                setStatus('analyzeStatus', data.detail || 'Phân tích kịch bản thất bại.', true);
+                return;
+            }
+
+            const cards = document.querySelectorAll('.panel-box');
+            data.panels.forEach((panel, index) => {
+                if (!cards[index]) {
+                    return;
+                }
+                cards[index].querySelector('.prompt-input').value = panel.mo_ta_hinh_anh || '';
+                cards[index].querySelector('.talk-left').value = panel.thoai_trai || '...';
+                cards[index].querySelector('.talk-right').value = panel.thoai_phai || '...';
+                cards[index].querySelector('.sfx-input').value = panel.sfx || '';
+                if (state.layout[index]) {
+                    cards[index].querySelector('.aspect-select').value = state.layout[index].aspect_ratio || '16:9';
+                    cards[index].querySelector('.image-size-select').value = state.layout[index].image_size || '2K';
+                } else if (panel.aspect_ratio) {
+                    cards[index].querySelector('.aspect-select').value = panel.aspect_ratio;
+                }
+            });
+
+            setStatus('analyzeStatus', 'Phân tích hoàn tất. Dữ liệu khung đang ở chế độ chỉ xem, bạn có thể xuất ngay.');
+        } catch (error) {
+            setStatus('analyzeStatus', 'Lỗi kết nối khi phân tích kịch bản.', true);
+        }
+    }
+
+    async function produceComic() {
+        const btn = document.getElementById('btnProduce');
+        const loading = document.getElementById('loading');
+        const cards = document.querySelectorAll('.panel-box');
+        const characterDescription = document.getElementById('characterDescription').value.trim();
+
+        const panels = [];
+        cards.forEach((card, index) => {
+            const moTa = card.querySelector('.prompt-input').value.trim();
+            if (!moTa) {
+                return;
+            }
+            const layoutItem = state.layout[index] || null;
+            panels.push({
+                mo_ta_hinh_anh: moTa,
+                thoai_trai: card.querySelector('.talk-left').value.trim() || '...',
+                thoai_phai: card.querySelector('.talk-right').value.trim() || '...',
+                sfx: card.querySelector('.sfx-input').value.trim(),
+                aspect_ratio: layoutItem ? layoutItem.aspect_ratio : card.querySelector('.aspect-select').value,
+                image_size: layoutItem ? layoutItem.image_size : card.querySelector('.image-size-select').value
+            });
+        });
+
+        if (!panels.length) {
+            alert('Chưa có dữ liệu khung hợp lệ để xuất ảnh.');
+            return;
+        }
+
+        btn.disabled = true;
+        loading.style.display = 'block';
+
+        try {
+            const response = await fetch('/api/comic/san_xuat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    panels,
+                    character_description: characterDescription
+                })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                alert(data.detail || 'Không thể xuất ảnh.');
+                return;
+            }
+
+            renderGeneratedImages(data);
+        } catch (error) {
+            alert('Lỗi kết nối khi xuất ảnh.');
+        } finally {
+            btn.disabled = false;
+            loading.style.display = 'none';
+        }
+    }
+
+    document.getElementById('btnUploadScript').addEventListener('click', uploadScriptFile);
+    document.getElementById('btnUploadLayout').addEventListener('click', uploadLayoutFile);
+    document.getElementById('btnUploadCharacters').addEventListener('click', uploadCharacterImages);
+    document.getElementById('btnAnalyze').addEventListener('click', analyzeScript);
+    document.getElementById('btnProduce').addEventListener('click', produceComic);
+    document.getElementById('frameCount').addEventListener('change', (event) => {
+        if (state.layout.length > 0) {
+            event.target.value = getEffectiveFrameCount();
+            setStatus('analyzeStatus', 'Đã có layout: số khung được cố định theo file layout.');
+            return;
+        }
+        const count = Math.max(1, Math.min(12, Number(event.target.value) || 4));
+        state.frameCount = count;
+        renderPanels(count);
+        applyLayoutToPanels();
+    });
+
+    renderPanels(state.frameCount);
+</script>
+</body>
+</html>

@@ -1,0 +1,236 @@
+/* studio.css
+   Modern Emerald/Mint Green Theme - Glassmorphism UI
+*/
+
+/* ========================
+   1. THEME VARIABLES 
+   ======================== */
+/* =========================================================
+   HỆ THỐNG GIAO DIỆN MÀU (TÍCH HỢP CHO CẢ STUDIO & AUTH)
+   ========================================================= */
+
+/* 1. MÀU XANH LÁ (Mặc định) */
+:root, html[data-theme="green"] {
+  --primary: #10b981; 
+  --primary-hover: #059669; 
+  --bg-gradient: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  --surface: rgba(255, 255, 255, 0.85);
+  --text-main: #064e3b;
+  --text-muted: #475569;
+  --border: #a7f3d0;
+  --input-focus: rgba(16, 185, 129, 0.15);
+  --shadow-sm: 0 4px 12px rgba(16, 185, 129, 0.05);
+  --shadow-glow: 0 0 15px rgba(16, 185, 129, 0.3);
+  
+  /* Ánh xạ cho trang Đăng nhập/Đăng ký */
+  --primary-green: var(--primary);
+  --text-dark: var(--text-main);
+}
+
+/* 2. MÀU XANH DƯƠNG */
+html[data-theme="blue"] {
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --bg-gradient: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  --text-main: #1e3a8a;
+  --border: #bfdbfe;
+  --input-focus: rgba(59, 130, 246, 0.15);
+  --shadow-sm: 0 4px 12px rgba(59, 130, 246, 0.05);
+  --shadow-glow: 0 0 15px rgba(59, 130, 246, 0.3);
+  --primary-green: var(--primary);
+  --text-dark: var(--text-main);
+}
+
+/* 3. MÀU HỒNG ĐỎ */
+html[data-theme="pink"] {
+  --primary: #f43f5e;
+  --primary-hover: #e11d48;
+  --bg-gradient: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+  --text-main: #881337;
+  --border: #fecdd3;
+  --input-focus: rgba(244, 63, 94, 0.15);
+  --shadow-sm: 0 4px 12px rgba(244, 63, 94, 0.05);
+  --shadow-glow: 0 0 15px rgba(244, 63, 94, 0.3);
+  --primary-green: var(--primary);
+  --text-dark: var(--text-main);
+}
+
+/* 4. MÀU XÁM TỐI GIẢN */
+html[data-theme="gray"] {
+  --primary: #64748b;
+  --primary-hover: #475569;
+  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  --text-main: #0f172a;
+  --border: #cbd5e1;
+  --input-focus: rgba(100, 116, 139, 0.15);
+  --shadow-sm: 0 4px 12px rgba(100, 116, 139, 0.05);
+  --shadow-glow: 0 0 15px rgba(100, 116, 139, 0.3);
+  --primary-green: var(--primary);
+  --text-dark: var(--text-main);
+}
+
+/* Cập nhật lại màu nền của body để nó tự nhận gradient theo Theme */
+body {
+    background: var(--bg-gradient) !important;
+}
+
+/* Dark theme overrides (Cập nhật tông dark green) */
+#app.theme-dark {
+  --bg-gradient: linear-gradient(135deg, #022c22 0%, #064e3b 100%);
+  --surface: rgba(2, 44, 34, 0.85);
+  --muted-surface: rgba(6, 78, 59, 0.5);
+  --text-main: #ecfdf5;
+  --text-muted: #a7f3d0;
+  --border: rgba(16, 185, 129, 0.2);
+  --dropzone-bg: rgba(6, 78, 59, 0.3);
+  --shadow-lg: 0 12px 40px rgba(2, 44, 34, 0.8);
+}
+
+/* ========================
+   2. BASE & TYPOGRAPHY
+   ======================== */
+* { box-sizing: border-box; }
+html, body { 
+    height: 100%; margin: 0; font-family: var(--font-sans); 
+    background: var(--bg-gradient); color: var(--text-main); 
+    -webkit-font-smoothing: antialiased; 
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+
+/* ========================
+   3. TOPBAR (HEADER)
+   ======================== */
+.topbar { 
+    display: flex; align-items: center; justify-content: space-between; 
+    padding: 18px 28px; background: rgba(255,255,255,0.4); 
+    backdrop-filter: var(--glass-blur); border-bottom: 1px solid rgba(16,185,129,0.1); 
+}
+.brand .logo { font-weight: 800; font-size: 20px; letter-spacing: 0.2px; color: var(--primary); }
+.brand .subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+/* BUTTONS */
+.actions { display: flex; gap: 12px; align-items: center; }
+.btn { 
+    display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; 
+    border-radius: 10px; background: transparent; color: var(--text-main); 
+    border: 1px solid var(--border); cursor: pointer; transition: all .2s ease; 
+    font-weight: 600; text-decoration: none; 
+}
+.btn.small { padding: 6px 12px; font-size: 13px; }
+.btn:hover { background: var(--dropzone-hover); transform: translateY(-1px); }
+
+/* Chuyển các nút Primary sang gradient Xanh lá */
+.btn.primary { 
+    background: linear-gradient(135deg, #34d399, var(--primary)); 
+    color: #fff; border: none; box-shadow: var(--shadow-sm); 
+}
+.btn.primary:hover { box-shadow: var(--shadow-glow); transform: translateY(-2px); }
+.btn[disabled] { opacity: .6; pointer-events: none; transform: none; box-shadow: none; }
+
+/* ACCOUNT AREA */
+.account-area { display: flex; gap: 12px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; }
+.avatar-btn { 
+    width: 38px; height: 38px; padding: 0; border-radius: 50%; display: inline-flex; 
+    align-items: center; justify-content: center; 
+    background: linear-gradient(135deg, #34d399, var(--primary)); color: #fff; 
+    border: none; box-shadow: var(--shadow-sm); font-size: 14px; cursor: pointer; transition: transform 0.2s; 
+}
+.avatar-btn:hover { transform: scale(1.05); }
+.avatar-initials { font-weight: 700; }
+
+/* ========================
+   4. WIZARD & MAIN CARD
+   ======================== */
+.studio-card { 
+    background: var(--surface); max-width: 1100px; margin: 30px auto; 
+    padding: 26px 30px; border-radius: 24px; box-shadow: var(--shadow-lg); 
+    border: 1px solid rgba(255,255,255,0.6); backdrop-filter: var(--glass-blur);
+}
+
+/* STEPPER */
+.wizard-steps { margin: 18px 0; }
+.steps-list { display: flex; gap: 12px; list-style: none; padding: 8px 12px; margin: 0 0 8px 0; }
+.step-item { 
+    display: flex; align-items: center; gap: 8px; padding: 8px 14px; 
+    border-radius: 12px; background: rgba(255,255,255,0.5); 
+    color: var(--text-muted); box-shadow: var(--shadow-sm); flex: 1; 
+}
+.step-item.active { 
+    background: linear-gradient(90deg, rgba(16,185,129,0.1), rgba(16,185,129,0.02)); 
+    color: var(--text-main); border: 1px solid var(--border);
+}
+.step-index { 
+    width: 30px; height: 30px; border-radius: 10px; background: #cbd5e1; 
+    display: inline-flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; 
+}
+.step-item.active .step-index { background: var(--primary); box-shadow: var(--shadow-glow); }
+.step-title { font-size: 14px; font-weight: 600; }
+
+/* STEP CONTENT */
+.wizard { padding: 12px 0; border-radius: 12px; }
+.wizard-step { 
+    background: rgba(255,255,255,0.6); padding: 34px; border-radius: 16px; 
+    margin-bottom: 18px; transition: opacity .3s ease, transform .3s ease; 
+    border: 1px solid var(--border); 
+}
+.wizard-step[aria-hidden="true"] { display: none; opacity: 0; transform: translateY(6px); pointer-events: none; }
+.wizard-step h2 { margin-top: 0; font-size: 24px; color: var(--text-main); }
+
+/* ========================
+   5. UPLOAD & FORMS
+   ======================== */
+.dd-area { 
+    border: 2px dashed var(--border); border-radius: 14px; padding: 28px 20px; 
+    display: flex; align-items: center; justify-content: center; cursor: pointer; 
+    background: var(--dropzone-bg); transition: all .2s ease; margin-bottom: 16px; min-height: 140px; position: relative; 
+}
+.dd-area.drag-over, .dd-area:hover { border-color: var(--primary); background: var(--dropzone-hover); }
+.upload-box { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; cursor: pointer; }
+.upload-box input[type="file"] { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.upload-inner { 
+    display: flex; align-items: center; justify-content: center; width: 100%; max-width: 420px; 
+    padding: 18px; border-radius: 10px; background: rgba(255,255,255,0.8); 
+    box-shadow: var(--shadow-sm); pointer-events: none; 
+}
+.upload-contents { display: flex; gap: 12px; align-items: center; color: var(--text-muted); font-size: 15px; }
+.upload-contents .dd-icon { font-size: 24px; color: var(--primary); }
+.upload-contents .choose { font-weight: 700; color: var(--primary); text-decoration: underline; }
+
+/* Textareas */
+.script-textarea, .json-textarea { 
+    width: 100%; min-height: 220px; padding: 18px; border-radius: 12px; 
+    border: 1px solid var(--border); background: var(--muted-surface); 
+    color: var(--text-main); font-family: var(--font-mono); font-size: 14px; 
+    line-height: 1.6; resize: vertical; transition: border-color 0.2s; 
+}
+.script-textarea:focus, .json-textarea:focus { 
+    outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px var(--input-focus); 
+}
+
+/* ========================
+   6. GRIDS & CONTROLS
+   ======================== */
+.characters-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.frames-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; align-items: start; margin-bottom: 16px; }
+.wizard-controls { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+.muted { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; display: block; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+.footer { text-align: center; color: var(--text-muted); padding: 20px 0; font-size: 13px; }
+
+/* ========================
+   7. TOAST NOTIFICATION 
+   ======================== */
+.toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+.toast { 
+    background: var(--success); color: white; padding: 14px 24px; border-radius: 10px; 
+    box-shadow: 0 10px 25px rgba(5, 150, 105, 0.3); font-weight: 500; font-size: 14px; 
+    display: flex; align-items: center; gap: 10px; transform: translateX(120%); 
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+}
+.toast.show { transform: translateX(0); }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .frames-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .steps-list { flex-direction: column; }
+}

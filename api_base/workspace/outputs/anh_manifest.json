@@ -1,0 +1,10 @@
+{
+  "images": [
+    {
+      "filename": "Anh_1.jpg",
+      "url": "/outputs/Anh_1.jpg",
+      "aspect_ratio_key": "aspect_ratio_16_9",
+      "aspect_ratio_label": "16:9"
+    }
+  ]
+}

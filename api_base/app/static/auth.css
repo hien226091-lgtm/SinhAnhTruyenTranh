@@ -1,0 +1,225 @@
+/* auth.css */
+:root {
+  --deep-ocean: #060E26;
+  --primary-blue: #033E8C;
+  --primary-hover: #022a60; /* Màu đậm hơn khi hover nút bấm */
+  --muted: #6b8aa3;
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --input-border: #e6eef8;
+  --input-focus: rgba(3, 62, 140, 0.15); /* Viền sáng khi đang nhập liệu */
+}
+
+/* Overlay với hiệu ứng mờ nền (Blur) chuẩn Glassmorphism */
+.auth-overlay { 
+  position: fixed; 
+  inset: 0; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  background: rgba(6, 14, 38, 0.4); 
+  backdrop-filter: blur(8px); /* Tạo độ mờ cho background phía sau */
+  z-index: 1000; 
+  padding: 20px;
+}
+
+/* Khung card bo góc mượt, đổ bóng sâu */
+.glass-panel { 
+  border-radius: 24px; 
+  background: var(--glass-bg);
+  box-shadow: 0 24px 48px rgba(2, 20, 50, 0.2), inset 0 0 0 1px rgba(255,255,255,0.6); 
+}
+
+.auth-card.two-column { 
+  width: 900px; 
+  max-width: 100%; 
+  min-height: 560px;
+  display: flex; 
+  overflow: hidden; 
+}
+
+/* Cột trái (Trang trí) */
+.auth-left { 
+  width: 45%; 
+  background: linear-gradient(135deg, #f3f8ff 0%, #e6eef8 100%); 
+  padding: 40px; 
+  display: flex; 
+  flex-direction: column;
+  align-items: center; 
+  justify-content: center; 
+  text-align: center;
+}
+
+.auth-left .logo-mark { 
+  font-size: 32px; 
+  font-weight: 800; 
+  color: var(--primary-blue); 
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.auth-left .brand-sub {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* Cột phải (Form nhập liệu) */
+.auth-right { 
+  width: 55%; 
+  background: #ffffff; 
+  padding: 48px; 
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Typography Form */
+.auth-form label { 
+  display: flex; 
+  justify-content: space-between;
+  margin-top: 20px; 
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600; 
+  color: var(--deep-ocean); 
+}
+
+.forgot { 
+  font-size: 13px; 
+  color: var(--primary-blue); 
+  text-decoration: none; 
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.forgot:hover {
+  color: var(--deep-ocean);
+  text-decoration: underline;
+}
+
+/* Inputs */
+.auth-form input { 
+  width: 100%; 
+  padding: 14px 16px; 
+  border-radius: 12px; 
+  border: 1px solid var(--input-border); 
+  background: #fafcff;
+  font-size: 15px;
+  color: var(--deep-ocean);
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.auth-form input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px var(--input-focus);
+}
+
+.auth-form input::placeholder {
+  color: #a0b0c0;
+}
+
+/* Buttons */
+.btn.primary { 
+  width: 100%;
+  background: linear-gradient(135deg, var(--primary-blue), #0452B8); 
+  color: #fff; 
+  border-radius: 12px; 
+  padding: 14px; 
+  font-size: 15px;
+  font-weight: 600; 
+  border: none;
+  margin-top: 28px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(3, 62, 140, 0.2);
+}
+
+.btn.primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(3, 62, 140, 0.3);
+}
+
+.btn.primary:active {
+  transform: translateY(0);
+}
+
+.form-message { 
+  font-size: 14px; 
+  padding: 12px; 
+  border-radius: 10px; 
+  margin-top: 16px;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Tabs điều hướng Đăng nhập/Đăng ký (từ HTML mới) */
+.toggle-tabs {
+  display: inline-flex;
+  background: #f3f8ff;
+  border-radius: 100px;
+  padding: 4px;
+  margin-bottom: 24px;
+  align-self: flex-end;
+}
+
+.tab {
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab.active {
+  background: #ffffff;
+  color: var(--primary-blue);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* Link dưới cùng */
+.muted-text {
+  color: var(--muted);
+  text-align: center;
+  margin-top: 24px;
+  font-size: 14px;
+}
+.link-bold {
+  color: var(--primary-blue);
+  font-weight: 600;
+  text-decoration: none;
+}
+.link-bold:hover {
+  text-decoration: underline;
+}
+
+/* Responsive cho Mobile */
+@media (max-width: 768px) { 
+  .auth-overlay {
+    padding: 0;
+    background: #ffffff;
+    backdrop-filter: none;
+  }
+  .auth-card.two-column { 
+    flex-direction: column; 
+    height: 100vh; 
+    border-radius: 0; 
+    box-shadow: none;
+  } 
+  .auth-left { 
+    width: 100%; 
+    padding: 32px 20px; 
+    flex: none;
+  } 
+  .auth-right { 
+    width: 100%; 
+    padding: 32px 20px; 
+    flex: 1;
+    justify-content: flex-start;
+  } 
+}

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AuraComic Studio — Creative AI Comic Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/static/studio.css">
+</head>
+<script>
+  // 1. Áp dụng màu ngay khi trang vừa load để chống chớp giật giao diện
+  const savedTheme = localStorage.getItem('app-theme') || 'green';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+
+  // 2. Chờ DOM load xong để gán sự kiện cho nút chọn màu
+  document.addEventListener('DOMContentLoaded', () => {
+    const themeSelector = document.getElementById('themeSelector');
+    if (themeSelector) {
+      themeSelector.value = savedTheme; // Hiển thị đúng màu đang chọn
+      
+      themeSelector.addEventListener('change', (e) => {
+        const newTheme = e.target.value;
+        // Đổi màu ngay lập tức
+        document.documentElement.setAttribute('data-theme', newTheme);
+        // Lưu lại để các trang khác tự đồng bộ
+        localStorage.setItem('app-theme', newTheme);
+      });
+    }
+  });
+</script>
+<body>
+  <div id="app" class="theme-light">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">AuraComic Studio</div>
+        <div class="subtitle">Creative AI Comic Studio</div>
+      </div>
+      <div class="actions" id="topActions">
+        <a href="/login.html" class="btn small">Đăng nhập</a>
+        <a href="/register.html" class="btn small">Đăng ký</a>
+        <select id="themeSelector" class="btn small" style="outline: none; cursor: pointer; padding: 6px 10px; font-weight: 600;">
+          <option value="green">🟢 Xanh lá</option>
+          <option value="blue">🔵 Xanh dương</option>
+          <option value="pink">🔴 Hồng đỏ</option>
+          <option value="gray">⚫ Xám</option>
+        </select>
+        <button id="exportBtn" class="btn primary">Xuất xưởng truyện tranh</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="studio-card">
+        
+        <nav class="wizard-steps" aria-label="Tiến trình">
+          <ol id="stepsList" class="steps-list">
+            <li class="step-item active" data-step="1"><span class="step-index">1</span><span class="step-title">Kịch bản</span></li>
+            <li class="step-item" data-step="2"><span class="step-index">2</span><span class="step-title">Bộ khung</span></li>
+            <li class="step-item" data-step="3"><span class="step-index">3</span><span class="step-title">Nhân vật</span></li>
+            <li class="step-item" data-step="4"><span class="step-index">4</span><span class="step-title">Phân tích & Khung</span></li>
+          </ol>
+        </nav>
+
+        <div class="wizard">
+          
+          <article class="wizard-step active" id="step-1" data-step="1">
+            <h2>Kịch bản</h2>
+            <p class="muted">Kéo & thả file kịch bản (pdf/docx/txt/json) hoặc dán trực tiếp nội dung bên dưới.</p>
+            
+            <div class="dd-area" id="scriptDrop">
+              <label class="upload-box">
+                <input type="file" id="scriptFileInput" accept=".txt,.json,.pdf,.docx" />
+                <div class="upload-inner">
+                  <div class="dd-icon">📄</div>
+                  <div class="dd-text"><span class="choose">Chọn file kịch bản</span><span class="no-file"> hoặc kéo thả vào đây</span></div>
+                </div>
+              </label>
+            </div>
+            
+            <label for="scriptText" class="sr-only">Nội dung kịch bản</label>
+            <textarea id="scriptText" class="script-textarea monospace" placeholder="Hoặc paste kịch bản ở đây..."></textarea>
+            
+            <div class="wizard-controls">
+              <button class="btn primary process-btn" data-target="2" id="next1">Xác nhận & Phân tích kịch bản</button>
+            </div>
+          </article>
+
+          <article class="wizard-step" id="step-2" data-step="2">
+            <h2>Bộ khung (Layout JSON)</h2>
+            <p class="muted">Tải lên file layout JSON hoặc kéo vùng để upload. Bạn có thể chỉnh sửa JSON trực tiếp.</p>
+            
+            <div class="dd-area" id="layoutDrop">
+              <label class="upload-box">
+                <input type="file" id="layoutFileInput" accept=".json" />
+                <div class="upload-inner">
+                  <div class="dd-icon">🧩</div>
+                  <div class="dd-text"><span class="choose">Chọn file JSON</span><span class="no-file">hoặc kéo thả vào đây</span></div>
+                </div>
+              </label>
+            </div>
+            
+            <label for="layoutEditor" class="sr-only">Layout JSON</label>
+            <textarea id="layoutEditor" class="json-textarea monospace" placeholder='{"panels": [ ... ]}'></textarea>
+            
+            <div class="wizard-controls">
+              <button class="btn prev-btn" data-target="1" id="prev2">Quay lại</button>
+              <button class="btn primary process-btn" data-target="3" id="next2">Xác nhận & Lưu bộ khung</button>
+            </div>
+          </article>
+
+          <article class="wizard-step" id="step-3" data-step="3">
+            <h2>Nhân vật</h2>
+            <p class="muted">Kéo & thả ảnh tham chiếu cho nhân vật (hỗ trợ nhiều file). Mỗi nhân vật sẽ có mô tả và ảnh tham chiếu.</p>
+            
+            <div class="characters-grid" id="charactersGrid">
+              </div>
+
+            <div class="dd-area" id="charactersDrop">
+              <label class="upload-box">
+                <input type="file" id="charactersFileInput" accept="image/*" multiple />
+                <div class="upload-inner">
+                  <div class="dd-icon">🖼️</div>
+                  <div class="dd-text"><span class="choose">Chọn ảnh nhân vật</span><span class="no-file">hoặc kéo thả vào đây</span></div>
+                </div>
+              </label>
+            </div>
+            
+            <div class="wizard-controls">
+              <button class="btn prev-btn" data-target="2" id="prev3">Quay lại</button>
+              <button class="btn primary process-btn" data-target="4" id="next3">Xác nhận & Phân tích nhân vật</button>
+            </div>
+          </article>
+
+          <article class="wizard-step" id="step-4" data-step="4">
+            <h2>Phân tích & Xem khung truyện</h2>
+            <p class="muted">Kiểm tra các khung được sinh. Bạn có thể chỉnh từng khung, sau đó xuất hoặc gửi API để render ảnh.</p>
+            
+            <div id="framesGrid" class="frames-grid" style="min-height: 200px; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--border); border-radius: 12px;">
+                <p class="muted" style="margin: 0;">Grid khung truyện sẽ hiển thị ở đây sau khi phân tích AI...</p>
+            </div>
+
+            <div id="studioStatus" class="status" style="margin-top:12px;"></div>
+            <div id="studioResults" class="result-grid" style="margin-top:12px;"></div>
+
+            <div class="wizard-controls">
+              <button class="btn prev-btn" data-target="3" id="prev4">Quay lại</button>
+              <button class="btn primary" id="renderBtn">Gửi tới AI để vẽ (Render)</button>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer muted">© Bản quyền thuộc bởi VoVanHien - Sinh viên DNC - Trường Công Nghệ Số và Trí Tuệ Nhân Tạo - Khoa CNTT</footer>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script type="module" src="/static/studio.js"></script>
+</body>
+</html>

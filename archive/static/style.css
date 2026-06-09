@@ -1,0 +1,167 @@
+/* static/style.css */
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background-color: #1e1e2f; 
+    color: #fff; 
+    margin: 0; 
+    padding: 20px; 
+}
+.container { 
+    max-width: 1300px; 
+    margin: auto; 
+}
+h1 { 
+    text-align: center; 
+    color: #ff79c6; 
+    margin-bottom: 5px; 
+}
+p.subtitle { 
+    text-align: center; 
+    color: #8be9fd; 
+    margin-bottom: 30px; 
+}
+
+/* CSS khu vực tải file */
+.upload-section { 
+    background-color: #282a36; 
+    padding: 20px; 
+    border-radius: 10px; 
+    margin-bottom: 30px; 
+    border: 2px dashed #bd93f9; 
+    text-align: center; 
+}
+.upload-section h3 { 
+    color: #50fa7b; 
+    margin-top: 0; 
+}
+.upload-section input[type="file"] { 
+    margin: 15px 0; 
+    color: #f8f8f2; 
+}
+.btn-analyze { 
+    background-color: #bd93f9; 
+    color: #282a36; 
+    border: none; 
+    padding: 10px 20px; 
+    font-weight: bold; 
+    border-radius: 5px; 
+    cursor: pointer; 
+    transition: 0.3s; 
+}
+.btn-analyze:hover { 
+    background-color: #ff79c6; 
+}
+#analyze-status { 
+    display: block; 
+    margin-top: 10px; 
+    font-style: italic; 
+    color: #f1fa8c; 
+}
+
+/* CSS khu vực Grid nhập liệu */
+.storyboard-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 20px; 
+}
+.panel-box { 
+    background-color: #282a36; 
+    padding: 15px; 
+    border-radius: 10px; 
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2); 
+    border: 1px solid #44475a; 
+}
+.panel-header { 
+    font-size: 1.1em; 
+    font-weight: bold; 
+    color: #f1fa8c; 
+    margin-bottom: 10px; 
+    border-bottom: 1px solid #6272a4; 
+    padding-bottom: 5px; 
+}
+.input-box { 
+    display: flex; 
+    flex-direction: column; 
+    margin-bottom: 10px; 
+}
+label { 
+    margin-bottom: 5px; 
+    color: #bd93f9; 
+    font-weight: bold; 
+    font-size: 0.9em; 
+}
+textarea { 
+    width: 100%; 
+    height: 80px; 
+    background-color: #44475a; 
+    color: #f8f8f2; 
+    border: 1px solid #6272a4; 
+    border-radius: 5px; 
+    padding: 8px; 
+    resize: none; 
+    font-family: inherit; 
+    font-size: 0.9em; 
+    box-sizing: border-box;
+}
+textarea:focus { 
+    outline: none; 
+    border-color: #ff79c6; 
+}
+
+/* Nút Submit & Trạng thái tải */
+.btn-produce { 
+    display: block; 
+    width: 100%; 
+    padding: 15px; 
+    font-size: 1.2em; 
+    font-weight: bold; 
+    color: #282a36; 
+    background-color: #50fa7b; 
+    border: none; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    transition: 0.3s; 
+    margin-top: 30px; 
+}
+.btn-produce:hover { 
+    background-color: #40c763; 
+}
+.btn-produce:disabled { 
+    background-color: #6272a4; 
+    cursor: not-allowed; 
+}
+#loading { 
+    text-align: center; 
+    display: none; 
+    margin-top: 20px; 
+    font-size: 1.2em; 
+    color: #f1fa8c; 
+}
+
+/* CSS hiển thị kết quả */
+.result-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 15px; 
+    margin-top: 30px; 
+}
+.result-item { 
+    position: relative; 
+    background: #000; 
+    border-radius: 8px; 
+    overflow: hidden; 
+    border: 2px solid #6272a4; 
+}
+.result-img { 
+    width: 100%; 
+    display: block; 
+}
+.result-label { 
+    position: absolute; 
+    top: 5px; 
+    left: 5px; 
+    background: rgba(0,0,0,0.7); 
+    padding: 2px 8px; 
+    border-radius: 4px; 
+    font-size: 0.8em; 
+}

@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Đăng nhập — AuraComic Studio</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* NHÚNG TRỰC TIẾP CSS - TÔNG XANH EMERALD (ĐỒNG BỘ VỚI STUDIO) */
+    /* =========================================================
+   HỆ THỐNG GIAO DIỆN MÀU (TÍCH HỢP CHO CẢ STUDIO & AUTH)
+   ========================================================= */
+
+/* 1. MÀU XANH LÁ (Mặc định) */
+:root, html[data-theme="green"] {
+  --primary: #10b981; 
+  --primary-hover: #059669; 
+  --bg-gradient: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  --surface: rgba(255, 255, 255, 0.85);
+  --text-main: #064e3b;
+  --text-muted: #475569;
+  --border: #a7f3d0;
+  --input-focus: rgba(16, 185, 129, 0.15);
+  --shadow-sm: 0 4px 12px rgba(16, 185, 129, 0.05);
+  --shadow-glow: 0 0 15px rgba(16, 185, 129, 0.3);
+  
+  /* Ánh xạ cho trang Đăng nhập/Đăng ký */
+  --primary-green: var(--primary);
+  --text-dark: var(--text-main);
+}
+
+/* 2. MÀU XANH DƯƠNG */
+html[data-theme="blue"] {
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --bg-gradient: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  --text-main: #1e3a8a;
+  --border: #bfdbfe;
+  --input-focus: rgba(59, 130, 246, 0.15);
+  --shadow-sm: 0 4px 12px rgba(59, 130, 246, 0.05);
+  --shadow-glow: 0 0 15px rgba(59, 130, 246, 0.3);
+  --primary-green: var(--primary);
+  --text-dark: var(--text-main);
+}
+
+/* 3. MÀU HỒNG ĐỎ */
+html[data-theme="pink"] {
+  --primary: #f43f5e;
+  --primary-hover: #e11d48;
+  --bg-gradient: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+  --text-main: #881337;
+  --border: #fecdd3;
+  --input-focus: rgba(244, 63, 94, 0.15);
+  --shadow-sm: 0 4px 12px rgba(244, 63, 94, 0.05);
+  --shadow-glow: 0 0 15px rgba(244, 63, 94, 0.3);
+  --primary-green: var(--primary);
+  --text-dark: var(--text-main);
+}
+
+/* 4. MÀU XÁM TỐI GIẢN */
+html[data-theme="gray"] {
+  --primary: #64748b;
+  --primary-hover: #475569;
+  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  --text-main: #0f172a;
+  --border: #cbd5e1;
+  --input-focus: rgba(100, 116, 139, 0.15);
+  --shadow-sm: 0 4px 12px rgba(100, 116, 139, 0.05);
+  --shadow-glow: 0 0 15px rgba(100, 116, 139, 0.3);
+  --primary-green: var(--primary);
+  --text-dark: var(--text-main);
+}
+
+/* Cập nhật lại màu nền của body để nó tự nhận gradient theo Theme */
+body {
+    background: var(--bg-gradient) !important;
+}
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      /* Nền trang đổi sang dải màu xanh Mint */
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      color: var(--text-dark);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .auth-overlay { 
+      position: fixed; inset: 0; display: flex; 
+      align-items: center; justify-content: center; 
+      background: rgba(6, 78, 59, 0.3); /* Phủ mờ tông xanh rêu */
+      backdrop-filter: blur(8px); z-index: 1000; padding: 20px;
+    }
+
+    .auth-card { 
+      width: 900px; max-width: 100%; min-height: 560px;
+      display: flex; flex-direction: row; overflow: hidden; 
+      border-radius: 24px; background: var(--glass-bg);
+      box-shadow: 0 24px 48px rgba(6, 78, 59, 0.15), inset 0 0 0 1px rgba(255,255,255,0.8); 
+    }
+
+    .auth-left { 
+      width: 45%; 
+      /* Nền cột trái (Art) ngả xanh Mint đậm hơn một chút */
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); 
+      padding: 40px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+    }
+
+    .auth-left .logo-mark { font-size: 32px; font-weight: 800; color: var(--primary-green); letter-spacing: -0.5px; margin-bottom: 8px; }
+    .auth-left .brand-sub { color: var(--text-dark); font-size: 15px; line-height: 1.5; opacity: 0.8; }
+
+    .auth-right { 
+      width: 55%; background: #ffffff; padding: 48px; 
+      display: flex; flex-direction: column; justify-content: center;
+    }
+
+    /* Tabs điều hướng */
+    .auth-header { display: flex; justify-content: flex-end; margin-bottom: 24px; }
+    .toggle-tabs { display: inline-flex; background: #ecfdf5; border-radius: 100px; padding: 4px; }
+    .tab { padding: 8px 20px; font-size: 14px; font-weight: 600; color: var(--muted); border-radius: 100px; cursor: pointer; transition: all 0.2s; }
+    .tab.active { background: #ffffff; color: var(--primary-green); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1); }
+
+    /* Forms */
+    .auth-form label { display: flex; justify-content: space-between; margin-top: 20px; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: var(--text-dark); }
+    .auth-form label .forgot { color: var(--primary-green); text-decoration: none; font-weight: 500; font-size: 13px; }
+    .auth-form label .forgot:hover { text-decoration: underline; color: var(--text-dark); }
+    
+    .auth-form input { width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--input-border); background: var(--input-bg); font-size: 15px; font-family: 'Inter', sans-serif; color: var(--text-dark); transition: all 0.2s ease; box-sizing: border-box; }
+    .auth-form input:focus { outline: none; border-color: var(--primary-green); background: #ffffff; box-shadow: 0 0 0 4px var(--input-focus); }
+    .auth-form input::placeholder { color: #94a3b8; }
+
+    /* Buttons - Gradient Xanh lá */
+    .btn.primary { width: 100%; background: linear-gradient(135deg, #34d399, var(--primary-green)); color: #fff; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; font-family: 'Inter', sans-serif; border: none; margin-top: 28px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+    .btn.primary:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); }
+
+    .form-message { font-size: 14px; padding: 12px; border-radius: 10px; margin-top: 16px; text-align: center; font-weight: 500; background: #fee2e2; color: #991b1b; }
+    
+    .muted-text { color: var(--muted); text-align: center; margin-top: 24px; font-size: 14px; }
+    .link-bold { color: var(--primary-green); font-weight: 600; text-decoration: none; }
+    .link-bold:hover { text-decoration: underline; }
+
+    /* Responsive */
+    @media (max-width: 768px) { 
+      .auth-overlay { padding: 0; background: #ffffff; backdrop-filter: none; }
+      .auth-card { flex-direction: column; height: 100vh; border-radius: 0; box-shadow: none; } 
+      .auth-left { width: 100%; padding: 32px 20px; flex: none; } 
+      .auth-right { width: 100%; padding: 32px 20px; flex: 1; justify-content: flex-start; } 
+    }
+
+    /* =========================================================
+       NÚT THOÁT (CLOSE BUTTON) Ở GÓC PHẢI
+       ========================================================= */
+    .auth-card {
+      position: relative; /* Bắt buộc có dòng này để nút X canh góc theo thẻ card */
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--input-bg);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      line-height: 1;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      z-index: 10;
+      border: 1px solid var(--input-border);
+      cursor: pointer;
+    }
+
+    .close-btn:hover {
+      background: #fee2e2; /* Đổi nền sang đỏ nhạt cảnh báo thoạt */
+      color: #ef4444; /* Chữ X màu đỏ */
+      border-color: #fecaca;
+      transform: rotate(90deg); /* Hiệu ứng xoay 90 độ cực ngầu khi di chuột vào */
+    }
+
+    /* =========================================================
+       NÚT ĐĂNG NHẬP MẠNG XÃ HỘI (GOOGLE & GITHUB)
+       ========================================================= */
+    .social-login {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .btn-social {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px;
+      background: #ffffff;
+      border: 1px solid var(--input-border);
+      border-radius: 12px;
+      color: var(--text-dark);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-social:hover {
+      background: #f8fafc;
+      border-color: var(--primary-green);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .btn-social svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Đường kẻ "Hoặc tiếp tục với" */
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid var(--input-border);
+    }
+    
+    .divider::before { margin-right: 12px; }
+    .divider::after { margin-left: 12px; }
+  </style>
+</head>
+<script>
+  // 1. Áp dụng màu ngay khi trang vừa load để chống chớp giật giao diện
+  const savedTheme = localStorage.getItem('app-theme') || 'green';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+
+  // 2. Chờ DOM load xong để gán sự kiện cho nút chọn màu
+  document.addEventListener('DOMContentLoaded', () => {
+    const themeSelector = document.getElementById('themeSelector');
+    if (themeSelector) {
+      themeSelector.value = savedTheme; // Hiển thị đúng màu đang chọn
+      
+      themeSelector.addEventListener('change', (e) => {
+        const newTheme = e.target.value;
+        // Đổi màu ngay lập tức
+        document.documentElement.setAttribute('data-theme', newTheme);
+        // Lưu lại để các trang khác tự đồng bộ
+        localStorage.setItem('app-theme', newTheme);
+      });
+    }
+  });
+</script>
+<body>
+  <div class="auth-overlay">
+    <div class="auth-card">
+      <a href="/ui" class="close-btn" title="Trở về trang chủ">&times;</a>
+      <div class="auth-left">
+        <div class="brand">
+          <div class="logo-mark">AuraComic Studio</div>
+          <div class="brand-sub">Hệ thống sinh ảnh truyện tranh liên tuyến bằng Trí tuệ nhân tạo.</div>
+        </div>
+      </div>
+
+      <div class="auth-right">
+        <div class="auth-header">
+          <div class="toggle-tabs">
+            <span class="tab" onclick="window.location.href='/register.html'">Tạo tài khoản</span>
+            <span class="tab active">Đăng nhập</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+          <h3 style="margin: 0; font-size: 28px; color: var(--deep-ocean);">Chào mừng trở lại</h3>
+          <p style="color: var(--muted); font-size: 15px; margin-top: 8px;">Đăng nhập để tiếp tục sáng tạo với AuraComic.</p>
+        </div>
+        <div class="social-login">
+          <button type="button" class="btn-social">
+            <svg viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Google
+          </button>
+          
+          <button type="button" class="btn-social">
+            <svg viewBox="0 0 24 24">
+              <path fill="#24292F" d="M12 1C5.93 1 1 5.93 1 12c0 4.86 3.15 8.98 7.53 10.43.55.1.75-.24.75-.53 0-.26-.01-.95-.01-1.87-3.06.67-3.71-1.47-3.71-1.47-.5-1.27-1.22-1.61-1.22-1.61-.99-.68.08-.66.08-.66 1.1.08 1.68 1.13 1.68 1.13.98 1.68 2.57 1.2 3.2.92.1-.71.38-1.2.69-1.48-2.44-.28-5.01-1.22-5.01-5.43 0-1.2.43-2.18 1.13-2.96-.11-.28-.49-1.4.11-2.92 0 0 .93-.3 3.03 1.13.88-.24 1.83-.37 2.78-.37s1.9.13 2.78.37c2.1-1.43 3.03-1.13 3.03-1.13.6 1.52.22 2.64.11 2.92.7.78 1.13 1.76 1.13 2.96 0 4.22-2.58 5.15-5.04 5.43.39.34.74 1 .74 2.02 0 1.46-.01 2.64-.01 3 0 .3.2.64.76.53C19.85 20.98 23 16.86 23 12c0-6.07-4.93-11-11-11z"/>
+            </svg>
+            GitHub
+          </button>
+        </div>
+
+        <div class="divider">Hoặc tiếp tục với email</div>
+        <form class="auth-form" id="loginForm">
+          <div>
+            <label>Email</label>
+            <input type="email" name="email" placeholder="you@example.com" required />
+          </div>
+
+          <div>
+            <label>Mật khẩu <a class="forgot" href="#">Quên mật khẩu?</a></label>
+            <input type="password" name="password" placeholder="••••••••" required />
+          </div>
+
+          <div id="formMessage" class="form-message" style="display:none;"></div>
+
+          <button class="btn primary" type="submit">Đăng nhập</button>
+
+          <p class="muted-text">
+            Chưa có tài khoản? <a href="/register.html" class="link-bold">Đăng ký ngay</a>
+          </p>
+        </form>
+        
+      </div>
+      
+    </div>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function(){
+    const form = document.getElementById('loginForm');
+    const params = new URLSearchParams(window.location.search);
+    const msg = document.getElementById('formMessage');
+    
+    // Bắt tham số từ trang đăng ký chuyển qua để báo thành công
+    if(params.get('registered') === '1' && msg){ 
+        msg.style.display='block'; 
+        msg.style.background = '#dcfce7';
+        msg.style.color = '#166534';
+        msg.textContent = 'Đăng ký thành công. Vui lòng đăng nhập.'; 
+    }
+
+    form.addEventListener('submit', async function(e){
+      e.preventDefault();
+      const btn = form.querySelector('button[type=submit]');
+      
+      // Reset thông báo lỗi
+      msg.style.display='none'; 
+      msg.style.background = '#fee2e2';
+      msg.style.color = '#991b1b';
+      
+      btn.disabled=true; 
+      btn.textContent='Đang đăng nhập...';
+      
+      const email = form.querySelector('input[name="email"]').value.trim();
+      const password = form.querySelector('input[name="password"]').value;
+      
+      try{
+        const res = await fetch('/api/auth/login', {
+          method:'POST', 
+          headers:{'Content-Type':'application/json'}, 
+          body: JSON.stringify({username: email, password})
+        });
+        const data = await res.json().catch(()=>({}));
+        
+        if(!res.ok){ 
+            msg.textContent = data.detail || 'Email hoặc mật khẩu không chính xác.'; 
+            msg.style.display='block'; 
+            btn.disabled=false; 
+            btn.textContent='Đăng nhập'; 
+            return; 
+        }
+        
+        // Lưu token và chuyển hướng vào UI chính
+        localStorage.setItem('access_token', data.access_token);
+        try{ localStorage.setItem('user_email', email); } catch(e){}
+        window.location.href = '/ui';
+        
+      } catch(err) { 
+        console.error(err); 
+        msg.textContent='Lỗi kết nối máy chủ.'; 
+        msg.style.display='block'; 
+      } finally { 
+        if(!localStorage.getItem('access_token')) {
+            btn.disabled=false; 
+            btn.textContent='Đăng nhập'; 
+        }
+      }
+    });
+  });
+  </script>
+</body>
+</html>
