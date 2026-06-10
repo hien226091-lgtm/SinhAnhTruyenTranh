@@ -1,4 +1,4 @@
-"""Gemini (Google AI Studio) based script writing service."""
+"""Vertex AI based script writing service."""
 
 from __future__ import annotations
 
@@ -6,120 +6,78 @@ import json
 import os
 from typing import Optional
 
-from google import genai
-from google.genai import types
+import vertexai
+from vertexai.generative_models import GenerativeModel, GenerationConfig
 
 from api_base.app.config import CONFIG
 
+class VertexStoryWriter:
+    """Generate structured story scripts using Vertex AI."""
 
-class GeminiStoryWriter:
-    """Generate structured story scripts using Gemini Text API (Google AI Studio)."""
-
-    def __init__(self, api_key: str) -> None:
-        # Ưu tiên Vertex AI (có billing) nếu đã config VERTEX_PROJECT_ID,
-        # fallback sang Google AI Studio API key nếu không có Vertex config.
-        if CONFIG.vertex_project_id:
-            try:
-                self._client = genai.Client(**CONFIG.build_vertex_client_kwargs())
-                print(f"[story_writer] Using Vertex AI (project={CONFIG.vertex_project_id}, location={CONFIG.vertex_location})")
-            except Exception as exc:
-                print(f"[story_writer] Vertex AI init failed ({exc}), falling back to Google AI Studio API key.")
-                self._client = genai.Client(**CONFIG.build_google_ai_client_kwargs()) if api_key else None
-        elif api_key:
-            self._client = genai.Client(**CONFIG.build_google_ai_client_kwargs())
-        else:
-            self._client = None
+    def __init__(self) -> None:
         self.last_error: str = ""
+        try:
+            # Khởi tạo Vertex AI với Project ID và Location từ file .env
+            vertexai.init(project=CONFIG.vertex_project_id, location=CONFIG.vertex_location)
+            
+            # Ưu tiên lấy model từ VERTEX_TEXT_MODEL, nếu không có thì mặc định xài gemini-1.5-flash-002
+            model_name = getattr(CONFIG, 'vertex_text_model', 'gemini-1.5-flash-002')
+            self._model = GenerativeModel(model_name)
+            print(f"[story_writer] Kết nối thành công Vertex AI (project={CONFIG.vertex_project_id}, location={CONFIG.vertex_location}, model={model_name})")
+        except Exception as exc:
+            print(f"[story_writer] Lỗi khởi tạo Vertex AI: {exc}")
+            self._model = None
 
     def generate(self, prompt: str) -> Optional[dict]:
         """Generate a story script from the prompt."""
         self.last_error = ""
 
-        if not self._client:
-            self.last_error = "Missing GEMINI_API_KEY / GOOGLE_AI_API_KEY (Google AI Studio key)."
-            print(f"Loi: {self.last_error}")
+        if not self._model:
+            self.last_error = "Vertex AI chưa được khởi tạo. Hãy kiểm tra lại Credentials và file .env."
+            print(f"Lỗi: {self.last_error}")
             return None
 
         try:
-            response = self._client.models.generate_content(
-                model=CONFIG.vertex_text_model,  # dùng model gemini-... theo config (không dùng Vertex project)
-                contents=prompt,
-                config=types.GenerateContentConfig(response_mime_type="application/json"),
-            )
+            # Ép Vertex AI phải trả về định dạng JSON
+            generation_config = GenerationConfig(response_mime_type="application/json")
+            response = self._model.generate_content(prompt, generation_config=generation_config)
 
-            text = getattr(response, "text", None)
+            text = response.text.strip()
             if not text:
-                text = str(response)
+                self.last_error = "AI không trả về kết quả nào."
+                return None
+
+            # Dọn dẹp rác markdown (nếu có)
+            if text.startswith("```json"):
+                text = text[7:]
+            if text.startswith("```"):
+                text = text[3:]
+            if text.endswith("```"):
+                text = text[:-3]
 
             try:
-                return json.loads(text)
-            except Exception:
-                # Attempt to extract the first balanced JSON object/array from text
-                def _extract_json_fragment(s: str) -> Optional[str]:
-                    s = s or ""
-                    start_idx = None
-                    stack: list[str] = []
-                    openers = {"{": "}", "[": "]"}
-                    for i, ch in enumerate(s):
-                        if start_idx is None and ch in openers:
-                            start_idx = i
-                            stack.append(openers[ch])
-                            continue
-                        if start_idx is not None:
-                            if ch in openers:
-                                stack.append(openers[ch])
-                            elif stack and ch == stack[-1]:
-                                stack.pop()
-                                if not stack:
-                                    return s[start_idx : i + 1]
-                    return None
-
-                fragment = _extract_json_fragment(text)
-                if fragment:
-                    try:
-                        return json.loads(fragment)
-                    except Exception as exc2:
-                        self.last_error = f"JSON parse failed: {exc2}"
-                        print(self.last_error)
-                        print("Response text (truncated):", (text or "")[:2000])
-                        return None
-
-                self.last_error = "No valid JSON fragment found in response."
+                return json.loads(text.strip())
+            except Exception as exc2:
+                self.last_error = f"Lỗi dịch chuỗi JSON: {exc2}"
                 print(self.last_error)
-                print("Response text (truncated):", (text or "")[:2000])
+                print("Nội dung AI trả về (bị lỗi):", text[:2000])
                 return None
 
         except Exception as exc:
             self.last_error = str(exc)
-            print("\n=== FULL EXCEPTION DETAILS ===")
-            print(f"Exception type: {type(exc).__name__}")
-            print(f"Exception message: {self.last_error}")
+            print("\n=== CHI TIẾT LỖI VERTEX AI ===")
+            print(f"Loại lỗi: {type(exc).__name__}")
+            print(f"Tin nhắn lỗi: {self.last_error}")
             print("==============================\n")
-
-            error_lower = self.last_error.lower()
-
-            if "resource_exhausted" in error_lower or "prepayment credits" in error_lower:
-                print(
-                    "LOI: Gemini credit het. Vui long nap them credit tai "
-                    "https://ai.studio/projects hoac chuyen sang dung Vertex AI."
-                )
-            elif "api key" in error_lower or "api_key" in error_lower:
-                print(
-                    "Loi tao kich ban: Missing or invalid Google AI Studio API key. "
-                    "Set GEMINI_API_KEY or GOOGLE_AI_API_KEY in api_base/.env."
-                )
-
             return None
 
-
-_writer = GeminiStoryWriter(CONFIG.google_ai_api_key)
-
+# Khởi tạo trực tiếp writer dùng Vertex AI
+_writer = VertexStoryWriter()
 
 DEFAULT_CHARACTER_GUIDE = """
 - Nhân vật 1: Tên (vd: Anh Tu) — mô tả ngắn (ngoại hình, trang phục, tính cách, vai trò).
 - Nhân vật 2: Tên (vd: Be Trau) — mô tả ngắn (ngoại hình, trang phục, tính cách, vai trò).
 """.strip()
-
 
 def _build_character_guide(character_description: str) -> str:
     """Build a character guide that can be reused across prompts."""
@@ -128,26 +86,25 @@ def _build_character_guide(character_description: str) -> str:
         return cleaned
     return DEFAULT_CHARACTER_GUIDE
 
-
 def viet_kich_ban_chi_tiet(
     y_tuong: str,
     so_khung: int = 6,
     character_description: str = "",
 ) -> Optional[dict]:
-    """Generate a detailed comic script with panel-level data."""
-    print(f"\nAI Bien kich dang phan tich y tuong: '{y_tuong}'...")
+    """Generate a detailed comic script with panel-level data using Vertex AI."""
+    print(f"\nAI Biên kịch đang phân tích ý tưởng: '{y_tuong}'...")
 
     character_guide = _build_character_guide(character_description)
 
-    # Development helper: nếu GEMINI key không có thì trả mock cho UI test.
-    if (os.getenv("DEV_FAKE_AI") or os.getenv("MOCK_AI")) and not CONFIG.google_ai_api_key:
+    # Nếu đang bật chế độ MOCK để test giao diện
+    if os.getenv("DEV_FAKE_AI") or os.getenv("MOCK_AI"):
         fake = {
             "tong_so_khung": so_khung,
             "kich_ban": [
                 {
                     "khung_so": i + 1,
                     "aspect_ratio": "16:9",
-                    "image_size": CONFIG.gemini_image_size,
+                    "image_size": getattr(CONFIG, 'gemini_image_size', '1024x1024'),
                     "mo_ta_hinh_anh": f"LEFT: Character A on left. RIGHT: Character B on right. Scene {i+1} for idea: {y_tuong}",
                     "sfx": "",
                     "thoai_trai": "...",
@@ -157,26 +114,6 @@ def viet_kich_ban_chi_tiet(
             ],
         }
         return fake
-
-    # Nếu thiếu GEMINI key thì trả demo mock response để UI không bị block.
-    if not CONFIG.google_ai_api_key:
-        print("[story_writer] No Gemini API key configured — returning demo mock response.")
-        demo = {
-            "tong_so_khung": so_khung,
-            "kich_ban": [
-                {
-                    "khung_so": i + 1,
-                    "aspect_ratio": "16:9",
-                    "image_size": CONFIG.gemini_image_size,
-                    "mo_ta_hinh_anh": f"LEFT: Character A on left. RIGHT: Character B on right. Demo scene {i+1} for idea: {y_tuong}",
-                    "sfx": "",
-                    "thoai_trai": "...",
-                    "thoai_phai": "...",
-                }
-                for i in range(so_khung)
-            ],
-        }
-        return demo
 
     prompt_parts: list[str] = []
     prompt_parts.append("Bạn là đạo diễn truyện tranh (Manga/Webtoon) chuyên nghiệp.")
@@ -223,11 +160,11 @@ def viet_kich_ban_chi_tiet(
     prompt_parts.append("- Sử dụng Unicode (NFC) cho tất cả ký tự tiếng Việt.")
     prompt_parts.append("")
     prompt_parts.append(
-        "QUY TẮC TỶ LỆ KHUNG (aspect_ratio): Chọn 1 trong các giá trị sau cho mỗi khung: 1:1, 1:4, 1:8, 2:3, 3:2, 3:4, 4:1, 4:3, 4:5, 5:4, 8:1, 9:16, 16:9, 21:9"
+        "QUY TẮC TỶ LỆ KHUNG (aspect_ratio): Chọn 1 trong các giá trị sau cho mỗi khung: 1:1, 1:4, 1:8, 2:3, 3:2, 3:4, 4:1, 4:3, 4:5, 5:4, 8:1, 9:16, 16:9"
     )
     prompt_parts.append("")
     prompt_parts.append(
-        "QUY TẮC ĐỘ PHÂN GIẢI (image_size): Chọn 1 trong các giá trị sau cho mỗi khung: 512, 1K, 2K, 4K"
+        "QUY TẮC ĐỘ PHÂN GIẢI (image_size): Chọn 1 trong các giá trị sau cho mỗi khung: 512, 1K, 2K"
     )
     prompt_parts.append("")
     prompt_parts.append("FORMAT ĐẦU RA (bắt buộc):")
@@ -252,7 +189,6 @@ def viet_kich_ban_chi_tiet(
     prompt = "\n".join(prompt_parts) + "\n\n" + json.dumps(example, ensure_ascii=False, indent=4)
 
     return _writer.generate(prompt)
-
 
 def get_last_story_error() -> str:
     """Return the latest story generation error message."""

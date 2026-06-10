@@ -1,0 +1,28 @@
+{
+  "images": [
+    {
+      "filename": "Anh_1_1_1781076079.jpg",
+      "url": "/outputs/Anh_1_1_1781076079.jpg",
+      "aspect_ratio_key": "aspect_ratio_16_9",
+      "aspect_ratio_label": "16:9"
+    },
+    {
+      "filename": "Anh_1_2_1781076110.jpg",
+      "url": "/outputs/Anh_1_2_1781076110.jpg",
+      "aspect_ratio_key": "aspect_ratio_3_4",
+      "aspect_ratio_label": "3:4"
+    },
+    {
+      "filename": "Anh_1_3_1781076144.jpg",
+      "url": "/outputs/Anh_1_3_1781076144.jpg",
+      "aspect_ratio_key": "aspect_ratio_16_9",
+      "aspect_ratio_label": "16:9"
+    },
+    {
+      "filename": "Anh_1_4_1781076177.jpg",
+      "url": "/outputs/Anh_1_4_1781076177.jpg",
+      "aspect_ratio_key": "aspect_ratio_4_3",
+      "aspect_ratio_label": "4:3"
+    }
+  ]
+}

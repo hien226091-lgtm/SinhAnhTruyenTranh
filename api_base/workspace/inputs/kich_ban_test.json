@@ -1,0 +1,30 @@
+[
+  {
+    "khung_so": 1,
+    "mo_ta_hinh_anh": "Violet bị vây hãm giữa rừng tối, cô kiệt sức tạo khiên tinh thể hồng. Quái vật áp sát.",
+    "sfx": "GÀO RÚ...",
+    "thoai_trai": "Sắp cạn năng lượng rồi... Lũ quái vật này đông quá!",
+    "thoai_phai": "Gừ rừ rừ..."
+  },
+  {
+    "khung_so": 2,
+    "mo_ta_hinh_anh": "Đại đao rực lửa của Murad cắm phập xuống đất, tạo màn chắn lửa đẩy lùi quái vật. Murad xuất hiện bảo vệ Violet.",
+    "sfx": "ẦM!!!",
+    "thoai_trai": "Đừng sợ! Đi lạc vào đây một mình nguy hiểm lắm đấy cô bé!",
+    "thoai_phai": "Anh... anh là ai?"
+  },
+  {
+    "khung_so": 3,
+    "mo_ta_hinh_anh": "Cảnh phối hợp: Murad vung đao tạo sóng lửa, Violet tung tinh thể hỗ trợ, quét sạch lũ quái vật.",
+    "sfx": "XOẸT! BÙM!",
+    "thoai_trai": "Phối hợp ăn ý ngoài sức tưởng tượng của tôi đấy!",
+    "thoai_phai": "Có anh bên cạnh, em không cần phải lo nữa!"
+  },
+  {
+    "khung_so": 4,
+    "mo_ta_hinh_anh": "Hoàng hôn, cả hai cùng đứng nhìn về phía chân trời. Murad mỉm cười, Violet thẹn thùng nắm lấy tay anh.",
+    "sfx": "LẤP LÁNH...",
+    "thoai_trai": "Đi thôi, cộng sự! Thế giới này còn nhiều thử thách lắm.",
+    "thoai_phai": "Dù đi đâu, em cũng sẽ đồng hành cùng anh."
+  }
+]

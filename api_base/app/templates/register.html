@@ -349,12 +349,21 @@ body {
           return; 
       }
       
-      try{
+      try {
+        // ĐÃ SỬA: Bổ sung thêm email: email vào cục payload gửi đi
+        const payload = {
+            username: email, 
+            email: email, 
+            password: password, 
+            fullname: name
+        };
+
         const res = await fetch('/api/auth/register', {
           method: 'POST', 
           headers: {'Content-Type':'application/json'}, 
-          body: JSON.stringify({username: email, password, fullname: name})
+          body: JSON.stringify(payload) // Gửi cục payload đã có đủ 4 thông tin
         });
+        
         const data = await res.json().catch(()=>({}));
         
         if(!res.ok){ 
@@ -366,7 +375,7 @@ body {
         }
         
         window.location.href = '/login.html?registered=1';
-      }catch(err){ 
+      } catch(err) { 
         console.error(err); 
         msg.textContent = 'Lỗi kết nối máy chủ.'; 
         msg.style.display='block'; 

@@ -11,21 +11,19 @@ from api_base.app.constants.image_options import DEFAULT_ASPECT_RATIO, DEFAULT_I
 
 class HealthResponse(BaseModel):
     """Health check response payload."""
-
     status: str
 
 
 class LoginRequest(BaseModel):
     """Credentials for login."""
-
     username: str = Field(..., min_length=1)
     password: str = Field(..., min_length=1)
 
 
 class RegisterRequest(BaseModel):
     """Payload to create a new user."""
-
     username: str = Field(..., min_length=3)
+    email: str = Field(...)  # Đã thêm trường email để khớp với Database
     password: str = Field(..., min_length=6)
     fullname: str | None = None
 
@@ -42,22 +40,20 @@ class UserProfile(BaseModel):
 
 class TokenResponse(BaseModel):
     """JWT token response."""
-
     access_token: str
     token_type: str = "bearer"
 
 
 class ScriptAnalysisRequest(BaseModel):
     """Request payload for script analysis."""
-
     text: str = Field(..., min_length=1)
     frames: int = Field(4, ge=1, le=12)
     character_description: str = ""
+    layout_json: Optional[str] = None
 
 
 class PanelDraft(BaseModel):
     """Panel draft data for the client UI."""
-
     mo_ta_hinh_anh: str
     thoai_trai: str
     thoai_phai: str
@@ -78,13 +74,13 @@ class PanelDraft(BaseModel):
 
 class ScriptAnalysisResponse(BaseModel):
     """Response payload for script analysis."""
-
+    comic_id: Optional[int] = None  # Cầu nối để báo cho Frontend biết ID của truyện vừa tạo
     panels: List[PanelDraft]
 
 
 class ProductionRequest(BaseModel):
     """Request payload for producing comic panels."""
-
+    comic_id: Optional[int] = None  # Frontend sẽ gửi ID truyện xuống để Server lưu khung ảnh vào DB
     panels: List[PanelDraft]
     character_description: str = ""
     session_id: str = "default"
@@ -92,7 +88,6 @@ class ProductionRequest(BaseModel):
 
 class LayoutItem(BaseModel):
     """Single layout item uploaded by the user."""
-
     khung_so: int
     aspect_ratio: str
     image_size: str = DEFAULT_IMAGE_SIZE
@@ -110,19 +105,17 @@ class LayoutItem(BaseModel):
 
 class ParsedScriptResponse(BaseModel):
     """Response payload for parsed script file uploads."""
-
     text: str
 
 
 class ParsedLayoutResponse(BaseModel):
     """Response payload for parsed layout file uploads."""
-
     layout: List[LayoutItem]
 
 
 class CharacterUploadResponse(BaseModel):
     """Response payload for character image uploads."""
-
+    comic_id: Optional[int] = None # Thêm ID truyện
     session_id: str
     files: List[str]
     message: str
@@ -130,7 +123,6 @@ class CharacterUploadResponse(BaseModel):
 
 class ImageOutput(BaseModel):
     """Output metadata for one generated image."""
-
     filename: str
     url: str
     aspect_ratio_key: str
@@ -139,7 +131,6 @@ class ImageOutput(BaseModel):
 
 class ProductionResponse(BaseModel):
     """Response payload for production output."""
-
     images: List[str]
     notes: List[ImageOutput] = []
     manifest_url: str = ""
@@ -147,13 +138,11 @@ class ProductionResponse(BaseModel):
 
 class PdfExportRequest(BaseModel):
     """Request payload for exporting selected images to PDF."""
-
     images: List[str]
 
 
 class PdfExportResponse(BaseModel):
     """Response payload for PDF export."""
-
     pdf_url: str
     filename: str
     image_count: int
@@ -161,13 +150,11 @@ class PdfExportResponse(BaseModel):
 
 class PageExportRequest(BaseModel):
     """Request payload for exporting selected images into one composed page."""
-
     images: List[str]
 
 
 class PageExportResponse(BaseModel):
     """Response payload for one composed page export."""
-
     page_url: str
     filename: str
     image_count: int
@@ -175,6 +162,5 @@ class PageExportResponse(BaseModel):
 
 class UploadResponse(BaseModel):
     """Response payload for file uploads."""
-
     filename: str
     url: str

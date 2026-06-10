@@ -5,6 +5,24 @@
       "url": "/outputs/Anh_1.jpg",
       "aspect_ratio_key": "aspect_ratio_16_9",
       "aspect_ratio_label": "16:9"
+    },
+    {
+      "filename": "Anh_2.jpg",
+      "url": "/outputs/Anh_2.jpg",
+      "aspect_ratio_key": "aspect_ratio_3_4",
+      "aspect_ratio_label": "3:4"
+    },
+    {
+      "filename": "Anh_3.jpg",
+      "url": "/outputs/Anh_3.jpg",
+      "aspect_ratio_key": "aspect_ratio_4_3",
+      "aspect_ratio_label": "4:3"
+    },
+    {
+      "filename": "Anh_4.jpg",
+      "url": "/outputs/Anh_4.jpg",
+      "aspect_ratio_key": "aspect_ratio_16_9",
+      "aspect_ratio_label": "16:9"
     }
   ]
 }

@@ -7,8 +7,10 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
-
+  
   <link rel="stylesheet" href="/static/studio.css">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <script>
   // 1. Áp dụng màu ngay khi trang vừa load để chống chớp giật giao diện
@@ -39,15 +41,16 @@
         <div class="subtitle">Creative AI Comic Studio</div>
       </div>
       <div class="actions" id="topActions">
-        <a href="/login.html" class="btn small">Đăng nhập</a>
-        <a href="/register.html" class="btn small">Đăng ký</a>
+        <div id="accountArea" class="account-area">
+            <a href="/login.html" class="btn small">Đăng nhập</a>
+            <a href="/register.html" class="btn small">Đăng ký</a>
+        </div>
         <select id="themeSelector" class="btn small" style="outline: none; cursor: pointer; padding: 6px 10px; font-weight: 600;">
           <option value="green">🟢 Xanh lá</option>
           <option value="blue">🔵 Xanh dương</option>
           <option value="pink">🔴 Hồng đỏ</option>
           <option value="gray">⚫ Xám</option>
         </select>
-        <button id="exportBtn" class="btn primary">Xuất xưởng truyện tranh</button>
       </div>
     </header>
 
@@ -96,7 +99,7 @@
                 <input type="file" id="layoutFileInput" accept=".json" />
                 <div class="upload-inner">
                   <div class="dd-icon">🧩</div>
-                  <div class="dd-text"><span class="choose">Chọn file JSON</span><span class="no-file">hoặc kéo thả vào đây</span></div>
+                  <div class="dd-text"><span class="choose">Chọn file JSON</span><span class="no-file"> hoặc kéo thả vào đây</span></div>
                 </div>
               </label>
             </div>
@@ -122,7 +125,7 @@
                 <input type="file" id="charactersFileInput" accept="image/*" multiple />
                 <div class="upload-inner">
                   <div class="dd-icon">🖼️</div>
-                  <div class="dd-text"><span class="choose">Chọn ảnh nhân vật</span><span class="no-file">hoặc kéo thả vào đây</span></div>
+                  <div class="dd-text"><span class="choose">Chọn ảnh nhân vật </span><span class="no-file"> hoặc kéo thả vào đây</span></div>
                 </div>
               </label>
             </div>
@@ -137,28 +140,49 @@
             <h2>Phân tích & Xem khung truyện</h2>
             <p class="muted">Kiểm tra các khung được sinh. Bạn có thể chỉnh từng khung, sau đó xuất hoặc gửi API để render ảnh.</p>
             
-            <div id="framesGrid" class="frames-grid" style="min-height: 200px; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--border); border-radius: 12px;">
-                <p class="muted" style="margin: 0;">Grid khung truyện sẽ hiển thị ở đây sau khi phân tích AI...</p>
+            <div id="framesGrid" class="frames-grid" style="text-align: center; padding: 40px; border: 2px dashed var(--border); border-radius: 16px;">
+              <div id="promptPlaceholder">
+                  <p>Phân tích hoàn tất! Nhấn <strong>"Gửi tới AI để vẽ"</strong> để bắt đầu quá trình tạo truyện.</p>
+              </div>
+              <div id="studioResults" class="result-grid" style="display: none; margin-top: 12px;"></div>
             </div>
 
             <div id="studioStatus" class="status" style="margin-top:12px;"></div>
-            <div id="studioResults" class="result-grid" style="margin-top:12px;"></div>
 
             <div class="wizard-controls">
               <button class="btn prev-btn" data-target="3" id="prev4">Quay lại</button>
               <button class="btn primary" id="renderBtn">Gửi tới AI để vẽ (Render)</button>
             </div>
           </article>
-
         </div>
       </div>
     </main>
 
-    <footer class="footer muted">© Bản quyền thuộc bởi VoVanHien - Sinh viên DNC - Trường Công Nghệ Số và Trí Tuệ Nhân Tạo - Khoa CNTT</footer>
+    <footer class="footer muted">© Bản quyền thuộc bởi Võ Văn Hiền - DNC - Trường Công Nghệ Số và Trí Tuệ Nhân Tạo - Khoa CNTT</footer>
   </div>
 
   <div class="toast-container" id="toastContainer"></div>
 
   <script type="module" src="/static/studio.js"></script>
+
+  <div id="logoutModal" class="modal-overlay">
+  <div class="modal-content">
+    <h3>Đăng xuất</h3>
+    <p>Bạn có chắc chắn muốn rời khỏi AuraComic Studio?</p>
+    <div class="modal-actions">
+      <button id="cancelLogout" class="btn">Hủy</button>
+      <button id="confirmLogout" class="btn primary">Đăng xuất</button>
+    </div>
+  </div>
+  <div id="loginPrompt" class="auth-required-box" style="display: none;">
+    <div class="auth-box-content">
+        <span class="auth-icon">🔒</span>
+        <h3>Tính năng yêu cầu đăng nhập</h3>
+        <p>Vui lòng đăng nhập để tiếp tục sử dụng các tính năng cao cấp của AuraComic Studio.</p>
+        <a href="/login.html" class="btn primary">Đăng nhập ngay</a>
+  </div>
+  
+</div>
+</div>
 </body>
 </html>

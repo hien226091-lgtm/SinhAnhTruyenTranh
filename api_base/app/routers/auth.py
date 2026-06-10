@@ -18,7 +18,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from api_base.app.models.schemas import UserProfile
 from api_base.app.config import CONFIG
 from api_base.app.models.base_db import get_db
-from api_base.app.models.models import Users
+from api_base.app.models.schema_db import User
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -33,7 +33,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse
     salted hash on first successful login.
     """
     # Try DB lookup by username OR email (support logging in with email)
-    user = db.query(Users).filter(or_(Users.Username == payload.username, Users.Email == payload.username)).first()
+    user = db.query(User).filter(or_(User.Username == payload.username, User.Email == payload.username)).first()
     if user:
         stored = user.PasswordHash or ""
         # Support existing plaintext passwords by accepting equality and
@@ -65,11 +65,11 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> Registe
     Password is stored as a salted hash.
     """
     # Treat username as email in this app's UI
-    existing = db.query(Users).filter((Users.Username == payload.username) | (Users.Email == payload.username)).first()
+    existing = db.query(User).filter((User.Username == payload.username) | (User.Email == payload.username)).first()
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User with that email already exists")
 
-    new_user = Users(
+    new_user = User(
         Username=payload.username,
         Email=payload.username,
         PasswordHash=hash_password(payload.password),
@@ -90,8 +90,24 @@ def me(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()), db: Se
     except Exception:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     username = payload.sub
-    user = db.query(Users).filter(Users.Username == username).first()
+    user = db.query(User).filter(User.Username == username).first()
     if not user:
         # If not in DB, return minimal profile from token
         return UserProfile(username=username, email=username, fullname=None)
     return UserProfile(username=user.Username, email=user.Email, fullname=getattr(user, 'FullName', None) or None)
+
+# HÀM XÁC THỰC NGƯỜI DÙNG (Cổng an ninh)
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()), db: Session = Depends(get_db)) -> User:
+    """Extracts and validates the token, then returns the User object."""
+    token = credentials.credentials
+    try:
+        payload = decode_access_token(token)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token không hợp lệ hoặc đã hết hạn")
+    
+    # Tìm user trong DB dựa trên username (subject) trong token
+    user = db.query(User).filter(User.Username == payload.sub).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Người dùng không tồn tại")
+    
+    return user
