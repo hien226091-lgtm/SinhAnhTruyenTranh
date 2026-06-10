@@ -1,0 +1,28 @@
+{
+  "images": [
+    {
+      "filename": "Anh_8_1_1781104441.jpg",
+      "url": "/outputs/User_TranBoiAnh/Anh_8_1_1781104441.jpg",
+      "aspect_ratio_key": "aspect_ratio_16_9",
+      "aspect_ratio_label": "16:9"
+    },
+    {
+      "filename": "Anh_8_2_1781104475.jpg",
+      "url": "/outputs/User_TranBoiAnh/Anh_8_2_1781104475.jpg",
+      "aspect_ratio_key": "aspect_ratio_3_4",
+      "aspect_ratio_label": "3:4"
+    },
+    {
+      "filename": "Anh_8_3_1781104507.jpg",
+      "url": "/outputs/User_TranBoiAnh/Anh_8_3_1781104507.jpg",
+      "aspect_ratio_key": "aspect_ratio_16_9",
+      "aspect_ratio_label": "16:9"
+    },
+    {
+      "filename": "Anh_8_4_1781104541.jpg",
+      "url": "/outputs/User_TranBoiAnh/Anh_8_4_1781104541.jpg",
+      "aspect_ratio_key": "aspect_ratio_16_9",
+      "aspect_ratio_label": "16:9"
+    }
+  ]
+}

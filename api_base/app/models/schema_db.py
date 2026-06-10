@@ -1,8 +1,7 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, func
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
-# Import 'Base' từ file base_db.py của bạn
 from api_base.app.models.base_db import Base 
 
 class User(Base):
@@ -62,3 +61,12 @@ class Character(Base):
     ReferenceImages = Column(Text, nullable=True)
 
     comic = relationship("Comic", back_populates="characters")
+
+class RequestLog(Base):
+    __tablename__ = "request_logs"
+    
+    LogID = Column(Integer, primary_key=True, index=True)
+    UserID = Column(Integer, index=True) 
+    ModelName = Column(String(50))        
+    Timestamp = Column(DateTime, default=func.now())
+    Status = Column(String(20))

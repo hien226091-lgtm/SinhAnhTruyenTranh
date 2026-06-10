@@ -42,6 +42,7 @@ class TokenResponse(BaseModel):
     """JWT token response."""
     access_token: str
     token_type: str = "bearer"
+    is_admin: bool = False
 
 
 class ScriptAnalysisRequest(BaseModel):

@@ -10,10 +10,13 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(HTTPBea
     token = credentials.credentials
     try:
         payload = decode_access_token(token)
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token không hợp lệ")
+    except Exception as e:
+        print(f"DEBUG: Giải mã token lỗi: {e}") # Xem trong Terminal
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token lỗi")
     
     user = db.query(User).filter(User.Username == payload.sub).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Người dùng không tồn tại")
+        print(f"DEBUG: Không tìm thấy user với username: {payload.sub}") # Xem trong Terminal
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User không tồn tại")
+    
     return user

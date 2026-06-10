@@ -209,10 +209,15 @@ function bindWizardControls() {
             // 3. Gọi API upload nhân vật thực tế để lưu đường dẫn vào bảng 'characters'
             const res = await fetch('/api/comic/upload-nhan-vat', {
                 method: 'POST',
+                headers: {
+                  // THÊM DÒNG NÀY VÀO ĐỂ CÓ CHÌA KHÓA
+                  'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                },
                 body: formData // Không set Header Content-Type vì FormData tự động cấu hình multipart/form-data
             });
 
             if (!res.ok) {
+                const errData = await res.json().catch(() => ({detail: 'Máy chủ từ chối lưu trữ dữ liệu.'}));
                 throw new Error('Máy chủ từ chối lưu trữ dữ liệu nhân vật.');
             }
             
@@ -321,18 +326,23 @@ $('#renderBtn')?.addEventListener('click', async () => {
 }
 
 
-/* -------------------------------
-   API Calls
-   -------------------------------*/
 async function analyzeScriptInStudio() {
   if (!state.scriptText || !state.scriptText.trim()) {
     showToast('Vui lòng nhập kịch bản trước khi phân tích.', 'error');
     return false;
   }
+  
+  // 1. Lấy token an toàn
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    showToast('Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục!', 'warning');
+    window.location.href = '/login.html';
+    return false;
+  }
+
   setStudioStatus('AI đang phân tích kịch bản...', false);
   
   try {
-    // Đã bổ sung layout_json để gửi kèm bộ khung xuống lưu vào Database
     const payload = { 
         text: state.scriptText, 
         frames: state.layoutJson && state.layoutJson.panels ? state.layoutJson.panels.length : 4, 
@@ -340,23 +350,33 @@ async function analyzeScriptInStudio() {
         layout_json: state.layoutJson ? JSON.stringify(state.layoutJson) : null 
     };
     
+    // 2. Gọi API với headers chuẩn
     const res = await fetch('/api/comic/phan_tich_kich_ban', {
       method: 'POST', 
-      headers: { 'Content-Type': 'application/json' }, 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` 
+      }, 
       body: JSON.stringify(payload)
     });
     
+    // 3. Xử lý phản hồi
+    if (res.status === 401 || res.status === 403) {
+      showToast('Phiên đăng nhập hết hạn hoặc không có quyền. Vui lòng đăng nhập lại.', 'error');
+      localStorage.removeItem('access_token'); // Xóa token hỏng
+      window.location.href = '/login.html';
+      return false;
+    }
+
     const data = await res.json().catch(() => ({}));
+    
     if (!res.ok) {
       showToast('Phân tích thất bại: ' + (data.detail || 'Lỗi server'), 'error');
       return false;
     }
 
-    // ---> QUAN TRỌNG: LƯU ID TRUYỆN VỪA TẠO VÀO STATE <---
-    if (data.comic_id) {
-        state.comic_id = data.comic_id;
-    }
-    // ------------------------------------------------------
+    // 4. Cập nhật trạng thái thành công
+    if (data.comic_id) state.comic_id = data.comic_id;
     
     const panels = Array.isArray(data.panels) ? data.panels : [];
     state.frames = panels.map((p, idx) => ({
@@ -368,11 +388,12 @@ async function analyzeScriptInStudio() {
     }));
     
     renderFrames();
-    setStudioStatus('Phân tích hoàn tất. Kiểm tra khung và nhấn "Gửi tới AI để vẽ".', false);
+    setStudioStatus('Phân tích hoàn tất!', false);
     return true;
+
   } catch (err) {
     console.error('Analyze error', err);
-    showToast('Lỗi kết nối khi gọi API phân tích.', 'error');
+    showToast('Lỗi kết nối server.', 'error');
     return false;
   }
 }

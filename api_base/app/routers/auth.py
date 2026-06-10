@@ -46,6 +46,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse
                 db.commit()
             # Use canonical username as token subject so /auth/me can find the DB row
             token = create_access_token(subject=user.Username)
+            is_admin = (user.Email == "vvhien@gmail.com")
             return TokenResponse(access_token=token)
 
     # Fallback to configured admin credentials
