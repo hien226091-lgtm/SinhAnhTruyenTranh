@@ -6,6 +6,7 @@ existing static admin credentials from configuration.
 """
 
 from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
@@ -22,7 +23,7 @@ from api_base.app.models.schema_db import User
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
+templates = Jinja2Templates(directory="templates")
 
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
@@ -46,7 +47,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse
                 db.commit()
             # Use canonical username as token subject so /auth/me can find the DB row
             token = create_access_token(subject=user.Username)
-            is_admin = (user.Email == "vvhien@gmail.com")
+            is_admin = (user.Email == "vvhien2004@gmail.com")
             return TokenResponse(access_token=token)
 
     # Fallback to configured admin credentials

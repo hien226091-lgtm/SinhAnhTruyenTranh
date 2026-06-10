@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
+from api_base.app.security.admin_deps import verify_admin
 from api_base.app.security.deps import get_current_user
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi import File, Form, UploadFile
@@ -200,12 +201,12 @@ def san_xuat_truyen(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> ProductionResponse:
-    if not check_quota_and_log(db, current_user.UserID, "imagen-4.0"):
-        raise HTTPException(
-            status_code=429, 
-            detail="Bạn đang vẽ quá nhanh! Hãy chờ 1 phút để hệ thống làm mới hạn mức nhé."
-        )
-    """Produce individual images and save frames to DB in user-specific folder."""
+    # if not check_quota_and_log(db, current_user.UserID, "imagen-4.0"):
+    #     raise HTTPException(
+    #         status_code=429, 
+    #         detail="Bạn đang vẽ quá nhanh! Hãy chờ 1 phút để hệ thống làm mới hạn mức nhé."
+    #     )
+    # """Produce individual images and save frames to DB in user-specific folder."""
     # Tạo thư mục riêng cho user
     user_output_dir = get_user_dir(CONFIG.outputs_dir, current_user.FullName or "Guest")
 
@@ -330,19 +331,16 @@ def xuat_trang(
 
     return PageExportResponse(page_url=f"/outputs/{page_name}", filename=page_name, image_count=len(image_paths))
 
+@router.get("/admin/users")
+def get_users(db: Session = Depends(get_db), admin: User = Depends(verify_admin)):
+    """Lấy danh sách toàn bộ người dùng cho Admin."""
+    return db.query(User).all()
+
 @router.get("/admin/stats")
 def xem_thong_ke(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    admin: User = Depends(verify_admin) # Chỉ cần gắn cái này, không cần if-else nữa
 ):
-    # CHỈ CHO PHÉP ADMIN XEM
-    if current_user.role != "admin": # Giả sử bạn có cột role trong bảng User
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, 
-            detail="Bạn không có quyền truy cập trang này!"
-        )
-        
-    # Đếm tổng số request của từng user
     stats = db.query(
         RequestLog.UserID, 
         func.count(RequestLog.LogID).label("total_requests")
@@ -351,11 +349,55 @@ def xem_thong_ke(
     return {"stats": [{"user_id": s[0], "count": s[1]} for s in stats]}
 
 @router.post("/admin/ban_user/{user_id}")
-def ban_user(user_id: int, is_banned: bool, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    if current_user.role != "admin": raise HTTPException(status_code=403)
-    
+def ban_user(
+    user_id: int, 
+    is_banned: bool, 
+    db: Session = Depends(get_db), 
+    admin: User = Depends(verify_admin) # Chỉ cần cái này là đủ
+):
     user = db.query(User).filter(User.UserID == user_id).first()
-    if user:
-        user.is_banned = is_banned
-        db.commit()
+    if not user:
+        raise HTTPException(status_code=404, detail="Không tìm thấy user!")
+    
+    user.is_banned = is_banned
+    db.commit()
     return {"message": "Success"}
+
+# API cấp thêm lượt vẽ cho User
+@router.post("/admin/grant_quota/{user_id}")
+def grant_quota(
+    user_id: int, 
+    extra_quota: int, 
+    db: Session = Depends(get_db), 
+    admin: User = Depends(verify_admin)
+):
+    # Giả sử bạn có bảng User hoặc Quota, ở đây tui ví dụ cập nhật trực tiếp vào User
+    user = db.query(User).filter(User.UserID == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
+    
+    # Bạn cần đảm bảo trong model User có trường Quota
+    user.Quota = (user.Quota or 0) + extra_quota
+    db.commit()
+    return {"message": f"Đã cấp thêm {extra_quota} lượt vẽ cho User {user_id}"}
+
+# API lấy nhật ký hệ thống (để xem User nào vẽ nhiều nhất)
+@router.get("/admin/logs")
+def get_logs(db: Session = Depends(get_db), admin: User = Depends(verify_admin)):
+    logs = db.query(RequestLog).order_by(RequestLog.LogID.desc()).limit(50).all()
+    return logs
+
+@router.get("/admin/all_comics")
+def get_all_comics(db: Session = Depends(get_db), admin: User = Depends(verify_admin)):
+    # Lấy danh sách truyện kèm thông tin User tạo ra nó
+    comics = db.query(Comic).all()
+    return comics
+
+@router.delete("/admin/delete_comic/{comic_id}")
+def delete_comic(comic_id: int, db: Session = Depends(get_db), admin: User = Depends(verify_admin)):
+    comic = db.query(Comic).filter(Comic.ComicID == comic_id).first()
+    if not comic:
+        raise HTTPException(status_code=404, detail="Không tìm thấy truyện")
+    db.delete(comic)
+    db.commit()
+    return {"message": "Đã xóa truyện thành công"}

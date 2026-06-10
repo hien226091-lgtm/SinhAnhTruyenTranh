@@ -1,38 +1,130 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-    <title>Admin Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard | AuraComic</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f7f6; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        :root { --primary: #22c55e; --bg-gradient: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); }
+        html[data-theme='blue'] { --primary: #3b82f6; --bg-gradient: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); }
+        html[data-theme='pink'] { --primary: #f43f5e; --bg-gradient: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); }
+        html[data-theme='gray'] { --primary: #64748b; --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); }
+
+        body { background: var(--bg-gradient) !important; min-height: 100vh; }
+        .sidebar { background: var(--primary) !important; color: white; min-height: 100vh; }
+        .nav-link { color: rgba(109, 53, 53, 0.8); }
+        .nav-link.active { background: rgba(0,0,0,0.15); color: white; }
+        .card { border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>Dashboard Quota (Lượt vẽ trong ngày)</h2>
-        <canvas id="myChart" width="400" height="200"></canvas>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2 sidebar p-3">
+                <h4 class="text-center py-2">AuraComic Admin</h4>
+                <hr>
+                <ul class="nav flex-column">
+                    <li class="nav-item"><a href="#" class="nav-link active"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                    <li class="nav-item"><a href="/ui" class="nav-link"><i class="fas fa-arrow-left me-2"></i>Về Studio</a></li>
+                </ul>
+                <div class="mt-auto p-3 position-absolute bottom-0">
+                    <small>Chủ đề giao diện:</small>
+                    <select id="themeSelector" class="form-select form-select-sm mt-1">
+                        <option value="green">🟢 Xanh lá</option>
+                        <option value="blue">🔵 Xanh dương</option>
+                        <option value="pink">🔴 Hồng đỏ</option>
+                        <option value="gray">⚫ Xám</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-10 p-4">
+                <h2 class="mb-4">Dashboard Tổng Quan</h2>
+                
+                <ul class="nav nav-tabs mb-4">
+                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#userTab">Người dùng</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#comicTab" onclick="loadComics()">Quản lý Truyện</button></li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="userTab">
+                        <div class="card p-4">
+                            <div class="d-flex justify-content-between mb-3">
+                                <h5>Danh sách người dùng</h5>
+                                <input type="text" id="searchUser" class="form-control w-25" placeholder="Tìm theo email...">
+                            </div>
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light"><tr><th>ID</th><th>Email</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+                                <tbody id="userTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="comicTab">
+                        <div class="card p-4">
+                            <h5>Danh sách truyện đã tạo</h5>
+                            <table class="table table-hover align-middle mt-3">
+                                <thead class="table-light"><tr><th>ID Truyện</th><th>User ID</th><th>Ngày tạo</th><th>Hành động</th></tr></thead>
+                                <tbody id="comicTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        async function loadStats() {
-            const res = await fetch('/api/comic/admin/stats', {
-                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') }
-            });
-            const data = await res.json();
-            
-            const labels = data.stats.map(s => `User ${s.user_id}`);
-            const counts = data.stats.map(s => s.count);
+        const token = localStorage.getItem('access_token');
+        
+        // Theme logic
+        const themeSelector = document.getElementById('themeSelector');
+        themeSelector.value = localStorage.getItem('app-theme') || 'green';
+        document.documentElement.setAttribute('data-theme', themeSelector.value);
+        themeSelector.addEventListener('change', (e) => {
+            document.documentElement.setAttribute('data-theme', e.target.value);
+            localStorage.setItem('app-theme', e.target.value);
+        });
 
-            new Chart(document.getElementById('myChart'), {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{ label: 'Số lượt vẽ', data: counts, backgroundColor: '#36a2eb' }]
-                }
-            });
+        // Load Users
+        async function loadUsers() {
+            const res = await fetch('/api/comic/admin/users', { headers: { 'Authorization': 'Bearer ' + token }});
+            const users = await res.json();
+            const tbody = document.getElementById('userTable');
+            tbody.innerHTML = users.map(u => `<tr>
+                <td>${u.UserID}</td><td>${u.Email}</td>
+                <td><span class="badge ${u.is_banned ? 'bg-danger' : 'bg-success'}">${u.is_banned ? 'Bị khóa' : 'Hoạt động'}</span></td>
+                <td>
+                    <button onclick="grantQuota(${u.UserID})" class="btn btn-sm btn-outline-primary"><i class="fas fa-plus"></i> Quota</button>
+                    <button onclick="banUser(${u.UserID}, ${!u.is_banned})" class="btn btn-sm ${u.is_banned ? 'btn-outline-success' : 'btn-outline-danger'}">${u.is_banned ? 'Mở' : 'Khóa'}</button>
+                </td>
+            </tr>`).join('');
         }
-        loadStats();
+
+        // Load Comics
+        async function loadComics() {
+            const res = await fetch('/api/comic/admin/all_comics', { headers: { 'Authorization': 'Bearer ' + token }});
+            const comics = await res.json();
+            const tbody = document.getElementById('comicTable');
+            tbody.innerHTML = comics.map(c => `<tr>
+                <td>${c.ComicID}</td><td>${c.UserID}</td><td>${c.CreatedAt || 'N/A'}</td>
+                <td><button onclick="deleteComic(${c.ComicID})" class="btn btn-sm btn-outline-danger">Xóa</button></td>
+            </tr>`).join('');
+        }
+
+        async function deleteComic(id) {
+            if(!confirm("Bạn chắc chắn muốn xóa bộ truyện này?")) return;
+            await fetch(`/api/comic/admin/delete_comic/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }});
+            loadComics();
+        }
+
+        // Các hàm banUser, grantQuota giữ nguyên...
+        async function grantQuota(id) { const amount = prompt("Số lượt cấp thêm:"); if(amount) fetch(`/api/comic/admin/grant_quota/${id}?extra_quota=${amount}`, {method:'POST', headers:{'Authorization': 'Bearer ' + token}}).then(()=>alert("OK")); }
+        async function banUser(id, status) { await fetch(`/api/comic/admin/ban_user/${id}?is_banned=${status}`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }}); loadUsers(); }
+
+        loadUsers();
     </script>
 </body>
 </html>

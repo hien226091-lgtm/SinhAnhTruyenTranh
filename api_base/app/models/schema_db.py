@@ -17,6 +17,7 @@ class User(Base):
     FullName = Column(String(100), nullable=True)
 
     comics = relationship("Comic", back_populates="owner")
+    Quota = Column(Integer, default=0)
 
 class Comic(Base):
     __tablename__ = "comics"
