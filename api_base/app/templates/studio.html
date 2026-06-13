@@ -2,187 +2,239 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AuraComic Studio — Creative AI Comic Studio</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
-  
-  <link rel="stylesheet" href="/static/studio.css">
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AuraComic Studio — Hệ thống sinh truyện tranh AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/studio.css" />
 </head>
-<script>
-  // 1. Áp dụng màu ngay khi trang vừa load để chống chớp giật giao diện
-  const savedTheme = localStorage.getItem('app-theme') || 'green';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-
-  // 2. Chờ DOM load xong để gán sự kiện cho nút chọn màu
-  document.addEventListener('DOMContentLoaded', () => {
-    const themeSelector = document.getElementById('themeSelector');
-    if (themeSelector) {
-      themeSelector.value = savedTheme; // Hiển thị đúng màu đang chọn
-      
-      themeSelector.addEventListener('change', (e) => {
-        const newTheme = e.target.value;
-        // Đổi màu ngay lập tức
-        document.documentElement.setAttribute('data-theme', newTheme);
-        // Lưu lại để các trang khác tự đồng bộ
-        localStorage.setItem('app-theme', newTheme);
-      });
-    }
-  });
-</script>
 <body>
-  <div id="app" class="theme-light">
+  <script>
+    const _token = new URLSearchParams(location.search).get('token');
+    if (_token) { localStorage.setItem('access_token', _token); history.replaceState({}, document.title, location.pathname); }
+    const theme = localStorage.getItem('app-theme') || 'green';
+    document.documentElement.setAttribute('data-theme', theme);
+  </script>
+
+  <div id="app">
+    <!-- Topbar -->
     <header class="topbar">
       <div class="brand">
         <div class="logo">AuraComic Studio</div>
-        <div class="subtitle">Creative AI Comic Studio</div>
+        <div class="subtitle">Sinh truyện tranh bằng AI</div>
       </div>
-      <div class="actions" id="topActions">
-        <div id="accountArea" class="account-area">
-            <a href="/login" class="btn small">Đăng nhập</a>
-            <a href="/register" class="btn small">Đăng ký</a>
+      <div class="actions">
+        <div class="account-area" id="accountArea">
+          <a href="/login" class="btn btn-sm btn-outline">Đăng nhập</a>
+          <a href="/register" class="btn btn-sm btn-primary">Đăng ký</a>
         </div>
-        <select id="themeSelector" class="btn small" style="outline: none; cursor: pointer; padding: 6px 10px; font-weight: 600;">
-          <option value="green">🟢 Xanh lá</option>
-          <option value="blue">🔵 Xanh dương</option>
-          <option value="pink">🔴 Hồng đỏ</option>
-          <option value="gray">⚫ Xám</option>
+        <select id="themeSelector" class="btn btn-sm btn-ghost" style="outline:none;cursor:pointer;padding:6px 10px;min-width:60px">
+          <option value="green">🟢</option>
+          <option value="blue">🔵</option>
+          <option value="pink">🔴</option>
+          <option value="gray">⚫</option>
         </select>
       </div>
     </header>
 
+    <!-- Main Content -->
     <main class="container">
       <div class="studio-card">
-        
+        <!-- Wizard Steps -->
         <nav class="wizard-steps" aria-label="Tiến trình">
-          <ol id="stepsList" class="steps-list">
+          <ol class="steps-list" id="stepsList">
             <li class="step-item active" data-step="1"><span class="step-index">1</span><span class="step-title">Kịch bản</span></li>
             <li class="step-item" data-step="2"><span class="step-index">2</span><span class="step-title">Bộ khung</span></li>
             <li class="step-item" data-step="3"><span class="step-index">3</span><span class="step-title">Nhân vật</span></li>
-            <li class="step-item" data-step="4"><span class="step-index">4</span><span class="step-title">Phân tích & Khung</span></li>
+            <li class="step-item" data-step="4"><span class="step-index">4</span><span class="step-title">Xuất bản</span></li>
           </ol>
         </nav>
 
         <div class="wizard">
-          
+          <!-- Step 1: Script -->
           <article class="wizard-step active" id="step-1" data-step="1">
             <h2>Kịch bản</h2>
-            <p class="muted">Kéo & thả file kịch bản (pdf/docx/txt/json) hoặc dán trực tiếp nội dung bên dưới.</p>
-            
+            <p class="muted">Đặt tên truyện, sau đó tải file (PDF/DOCX/TXT/JSON) hoặc dán nội dung vào ô bên dưới.</p>
+            <div class="mb-16">
+              <label class="form-label" for="comicTitle">Tên truyện</label>
+              <input type="text" id="comicTitle" class="form-input" placeholder="VD: Chuyến phiêu lưu của Tuấn" />
+            </div>
             <div class="dd-area" id="scriptDrop">
               <label class="upload-box">
-                <input type="file" id="scriptFileInput" accept=".txt,.json,.pdf,.docx" />
+                <input type="file" accept=".txt,.json,.pdf,.docx" />
                 <div class="upload-inner">
-                  <div class="dd-icon">📄</div>
-                  <div class="dd-text"><span class="choose">Chọn file kịch bản</span><span class="no-file"> hoặc kéo thả vào đây</span></div>
+                  <span class="dd-icon">📄</span>
+                  <span class="dd-text"><span class="choose">Chọn file kịch bản</span> <span class="no-file">hoặc kéo thả vào đây</span></span>
                 </div>
               </label>
             </div>
-            
-            <label for="scriptText" class="sr-only">Nội dung kịch bản</label>
-            <textarea id="scriptText" class="script-textarea monospace" placeholder="Hoặc paste kịch bản ở đây..."></textarea>
-            
+            <label class="form-label" for="scriptText">Nội dung kịch bản</label>
+            <textarea id="scriptText" class="form-textarea monospace" placeholder="Paste nội dung kịch bản ở đây..."></textarea>
             <div class="wizard-controls">
-              <button class="btn primary process-btn" data-target="2" id="next1">Xác nhận & Phân tích kịch bản</button>
+              <button class="btn btn-primary process-btn" data-target="2" id="next1">Xác nhận kịch bản</button>
             </div>
           </article>
 
+          <!-- Step 2: Layout -->
           <article class="wizard-step" id="step-2" data-step="2">
-            <h2>Bộ khung (Layout JSON)</h2>
-            <p class="muted">Tải lên file layout JSON hoặc kéo vùng để upload. Bạn có thể chỉnh sửa JSON trực tiếp.</p>
-            
+            <h2>Bộ khung (Layout)</h2>
+            <p class="muted">Tải lên file JSON bố cục khung hình hoặc chỉnh sửa trực tiếp.</p>
             <div class="dd-area" id="layoutDrop">
               <label class="upload-box">
-                <input type="file" id="layoutFileInput" accept=".json" />
+                <input type="file" accept=".json" />
                 <div class="upload-inner">
-                  <div class="dd-icon">🧩</div>
-                  <div class="dd-text"><span class="choose">Chọn file JSON</span><span class="no-file"> hoặc kéo thả vào đây</span></div>
+                  <span class="dd-icon">🧩</span>
+                  <span class="dd-text"><span class="choose">Chọn file JSON</span> <span class="no-file">hoặc kéo thả vào đây</span></span>
                 </div>
               </label>
             </div>
-            
-            <label for="layoutEditor" class="sr-only">Layout JSON</label>
-            <textarea id="layoutEditor" class="json-textarea monospace" placeholder='{"panels": [ ... ]}'></textarea>
-            
+            <label class="form-label" for="layoutEditor">Layout JSON</label>
+            <textarea id="layoutEditor" class="form-textarea monospace" placeholder='{"panels": [{"khung_so": 1, "aspect_ratio": "16:9"}]}'></textarea>
             <div class="wizard-controls">
-              <button class="btn prev-btn" data-target="1" id="prev2">Quay lại</button>
-              <button class="btn primary process-btn" data-target="3" id="next2">Xác nhận & Lưu bộ khung</button>
+              <button class="btn btn-ghost prev-btn" data-target="1" id="prev2">← Quay lại</button>
+              <button class="btn btn-primary process-btn" data-target="3" id="next2">Xác nhận bộ khung</button>
             </div>
           </article>
 
+          <!-- Step 3: Characters -->
           <article class="wizard-step" id="step-3" data-step="3">
             <h2>Nhân vật</h2>
-            <p class="muted">Kéo & thả ảnh tham chiếu cho nhân vật (hỗ trợ nhiều file). Mỗi nhân vật sẽ có mô tả và ảnh tham chiếu.</p>
-            
-            <div class="characters-grid" id="charactersGrid">
-              </div>
-
+            <p class="muted">Tải lên ảnh tham chiếu cho nhân vật (hỗ trợ nhiều file).</p>
+            <div class="characters-grid" id="charactersGrid"></div>
             <div class="dd-area" id="charactersDrop">
               <label class="upload-box">
-                <input type="file" id="charactersFileInput" accept="image/*" multiple />
+                <input type="file" accept="image/*" multiple />
                 <div class="upload-inner">
-                  <div class="dd-icon">🖼️</div>
-                  <div class="dd-text"><span class="choose">Chọn ảnh nhân vật </span><span class="no-file"> hoặc kéo thả vào đây</span></div>
+                  <span class="dd-icon">🖼️</span>
+                  <span class="dd-text"><span class="choose">Chọn ảnh nhân vật</span> <span class="no-file">hoặc kéo thả vào đây</span></span>
                 </div>
               </label>
             </div>
-            
             <div class="wizard-controls">
-              <button class="btn prev-btn" data-target="2" id="prev3">Quay lại</button>
-              <button class="btn primary process-btn" data-target="4" id="next3">Xác nhận & Phân tích nhân vật</button>
+              <button class="btn btn-ghost prev-btn" data-target="2" id="prev3">← Quay lại</button>
+              <button class="btn btn-primary process-btn" data-target="4" id="next3">Phân tích & Lưu</button>
             </div>
           </article>
 
+          <!-- Step 4: Production -->
           <article class="wizard-step" id="step-4" data-step="4">
-            <h2>Phân tích & Xem khung truyện</h2>
-            <p class="muted">Kiểm tra các khung được sinh. Bạn có thể chỉnh từng khung, sau đó xuất hoặc gửi API để render ảnh.</p>
-            
-            <div id="framesGrid" class="frames-grid" style="text-align: center; padding: 40px; border: 2px dashed var(--border); border-radius: 16px;">
-              <div id="promptPlaceholder">
-                  <p>Phân tích hoàn tất! Nhấn <strong>"Gửi tới AI để vẽ"</strong> để bắt đầu quá trình tạo truyện.</p>
+            <h2>Xuất bản</h2>
+            <p class="muted">Kiểm tra các khung truyện, chỉnh sửa nếu cần, sau đó gửi AI vẽ và xuất file.</p>
+            <div id="framesGrid" class="frames-grid">
+              <div class="empty-state">
+                <div class="empty-icon">🎨</div>
+                <p>Hoàn thành các bước trước để hiển thị khung truyện tại đây.</p>
               </div>
-              <div id="studioResults" class="result-grid" style="display: none; margin-top: 12px;"></div>
             </div>
-
-            <div id="studioStatus" class="status" style="margin-top:12px;"></div>
-
+            <div id="studioStatus" class="status-bar info" style="display:none"></div>
             <div class="wizard-controls">
-              <button class="btn prev-btn" data-target="3" id="prev4">Quay lại</button>
-              <button class="btn primary" id="renderBtn">Gửi tới AI để vẽ (Render)</button>
+              <button class="btn btn-ghost prev-btn" data-target="3" id="prev4">← Quay lại</button>
+              <button class="btn btn-primary" id="renderBtn">🚀 Gửi tới AI để vẽ</button>
             </div>
           </article>
         </div>
       </div>
     </main>
 
-    <footer class="footer muted">© Bản quyền thuộc bởi Võ Văn Hiền - DNC - Trường Công Nghệ Số và Trí Tuệ Nhân Tạo - Khoa CNTT</footer>
+    <footer class="footer">
+      &copy; Võ Văn Hiền — DNC — Trường Công Nghệ Số và Trí Tuệ Nhân Tạo — Khoa CNTT
+    </footer>
   </div>
 
+  <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <script type="module" src="/static/studio.js"></script>
+  <!-- Upgrade Modal -->
+  <div class="modal-overlay" id="upgradeModal">
+    <div class="modal-content" style="width:540px;max-width:95vw;text-align:left">
+      <h3 style="text-align:center;font-size:22px;margin-bottom:4px">💎 Nâng cấp lên Pro</h3>
+      <p style="text-align:center;color:var(--text-secondary);margin-bottom:16px;font-size:14px">Sinh ảnh không giới hạn với gói Pro</p>
 
-  <div id="logoutModal" class="modal-overlay">
-  <div class="modal-content">
-    <h3>Đăng xuất</h3>
-    <p>Bạn có chắc chắn muốn rời khỏi AuraComic Studio?</p>
-    <div class="modal-actions">
-      <button id="cancelLogout" class="btn">Hủy</button>
-      <button id="confirmLogout" class="btn primary">Đăng xuất</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div style="background:var(--primary-light);border-radius:var(--radius-md);padding:16px;text-align:center;border:2px solid var(--border)">
+          <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">Free</div>
+          <div style="font-size:28px;font-weight:800;color:var(--text)">20</div>
+          <div style="font-size:12px;color:var(--text-secondary)">lượt sinh</div>
+        </div>
+        <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:var(--radius-md);padding:16px;text-align:center;border:2px solid #f59e0b">
+          <div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:4px">⭐ Pro</div>
+          <div style="font-size:28px;font-weight:800;color:#92400e">∞</div>
+          <div style="font-size:12px;color:#92400e">không giới hạn</div>
+          <div style="font-size:15px;font-weight:700;color:#92400e;margin-top:4px;background:rgba(245,158,11,0.2);padding:2px 10px;border-radius:12px;display:inline-block">199.999₫</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:16px;margin-bottom:16px">
+        <div style="flex:1;background:#f8fafc;border-radius:var(--radius-md);padding:16px;border:1px solid var(--border)">
+          <p style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)">🏦 Chuyển khoản ngân hàng</p>
+          <div style="font-size:13px;line-height:1.8;color:var(--text-secondary)">
+            <div><strong>Ngân hàng:</strong> Agribank</div>
+            <div><strong>STK:</strong> <span style="font-size:18px;font-weight:800;color:var(--text);letter-spacing:2px;user-select:all">1805205155862</span> <button class="btn btn-sm btn-ghost" onclick="navigator.clipboard.writeText('1805205155862');showToast('Đã copy số tài khoản!','success')" style="padding:2px 8px;font-size:11px;border:1px solid var(--border)">📋 Copy</button></div>
+            <div><strong>Chủ tài khoản:</strong> Võ Văn Hiền</div>
+            <div><strong>Số tiền:</strong> <span style="font-weight:700;color:var(--text);font-size:15px">199.999 VNĐ</span></div>
+            <div><strong>Nội dung:</strong> <code style="background:var(--primary-light);padding:2px 6px;border-radius:4px;font-size:12px;user-select:all">AuraComic_Pro_ email_của_bạn</code></div>
+          </div>
+        </div>
+        <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px">
+          <img src="/static/ma_QR.jpg" style="width:140px;height:140px;border-radius:var(--radius-md);border:1px solid var(--border);object-fit:cover" alt="QR Chuyển khoản" />
+          <span style="font-size:11px;color:var(--text-muted)">QR Chuyển khoản</span>
+        </div>
+      </div>
+
+      <div id="upgradeConfirmSection" style="display:none;background:#f0fdf4;border-radius:var(--radius-md);padding:16px;border:1px solid #86efac;margin-bottom:16px">
+        <p style="font-size:13px;font-weight:600;color:#166534;margin-bottom:8px">✅ Nhập mã giao dịch sau khi chuyển khoản</p>
+        <input type="text" id="transactionRefInput" class="form-input" placeholder="Mã giao dịch (VD: FT250612...) - để trống nếu không có" style="width:100%;margin-bottom:8px;font-size:13px" />
+        <button class="btn btn-primary" id="confirmUpgradeBtn" style="width:100%">Xác nhận đã chuyển khoản & Kích hoạt Pro ngay</button>
+      </div>
+
+      <div style="background:#fffbeb;border-radius:var(--radius-md);padding:12px 14px;border:1px solid #fde68a;font-size:12px;color:#92400e;margin-bottom:12px;line-height:1.6">
+        ⏳ <strong>Chuyển đúng 199.999 VNĐ</strong> đến tài khoản trên, sau đó bấm "Xác nhận đã chuyển khoản" để kích hoạt Pro ngay lập tức. Admin sẽ kiểm tra đối soát sau.
+      </div>
+
+      <div class="modal-actions" style="flex-wrap:wrap">
+        <button class="btn btn-primary" id="showUpgradeFormBtn">✅ Tôi đã chuyển khoản</button>
+        <button class="btn btn-outline" id="closeUpgrade">Đóng</button>
+      </div>
     </div>
   </div>
-  <div id="loginPrompt" class="auth-required-box" style="display: none;">
-    <div class="auth-box-content">
-        <span class="auth-icon">🔒</span>
-        <h3>Tính năng yêu cầu đăng nhập</h3>
-        <p>Vui lòng đăng nhập để tiếp tục sử dụng các tính năng cao cấp của AuraComic Studio.</p>
-        <a href="/login" class="btn primary">Đăng nhập ngay</a>
+
+  <!-- Logout Modal -->
+  <div class="modal-overlay" id="logoutModal">
+    <div class="modal-content">
+      <h3>Đăng xuất</h3>
+      <p>Bạn có chắc chắn muốn rời khỏi AuraComic Studio?</p>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="cancelLogout">Hủy</button>
+        <button class="btn btn-danger" id="confirmLogout">Đăng xuất</button>
+      </div>
+    </div>
   </div>
-  
-</div>
-</div>
+
+  <!-- Login Prompt -->
+  <div class="auth-required-box" id="loginPrompt">
+    <div class="auth-icon">🔒</div>
+    <h3>Tính năng yêu cầu đăng nhập</h3>
+    <p>Vui lòng đăng nhập để sử dụng các tính năng của AuraComic Studio.</p>
+    <div style="display:flex;gap:12px;margin-top:8px">
+      <a href="/login" class="btn btn-primary">Đăng nhập</a>
+      <a href="/register" class="btn btn-outline">Đăng ký</a>
+      <button class="btn btn-ghost" id="closeLoginPrompt">Đóng</button>
+    </div>
+  </div>
+
+  <script>
+    // Theme selector
+    document.addEventListener('DOMContentLoaded', () => {
+      const sel = document.getElementById('themeSelector');
+      if (sel) {
+        sel.value = localStorage.getItem('app-theme') || 'green';
+        sel.addEventListener('change', (e) => {
+          document.documentElement.setAttribute('data-theme', e.target.value);
+          localStorage.setItem('app-theme', e.target.value);
+        });
+      }
+    });
+  </script>
+  <script type="module" src="/static/studio.js"></script>
 </body>
 </html>

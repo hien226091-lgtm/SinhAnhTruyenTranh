@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import time
+from datetime import datetime
 from pathlib import Path
 from api_base.app.security.admin_deps import verify_admin
 from api_base.app.security.deps import get_current_user
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Body
 from fastapi import File, Form, UploadFile
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -31,9 +32,32 @@ from api_base.app.models.schemas import (
 from api_base.app.utils.file_parsers import ParseFileError, extract_layout_data, extract_script_text
 from api_base.app.utils.comic_postprocess import compose_episode_page, export_pdf_from_images, write_image_manifest
 from api_base.app.utils.helpers import ensure_dir, get_user_dir, sanitize_filename
-from api_base.app.utils.quota_manager import check_quota_and_log
+from api_base.app.utils.quota_manager import FREE_PLAN_LIMIT, PRO_PLAN_LIMIT, check_quota_and_log, check_generation_quota, get_plan_limit, increment_generated_count
 from api_base.chatbot.services.story_writer import viet_kich_ban_chi_tiet, get_last_story_error
 from api_base.chatbot.services.ai_generator import get_last_image_error, tao_anh_truyen_tranh
+
+
+def _resolve_image_path(url_or_path: str) -> Path:
+    """Resolve an image URL/path to an actual file under outputs_dir.
+
+    Handles both:
+      /outputs/User_VoVanHien/Anh_1.jpg  -> outputs/User_VoVanHien/Anh_1.jpg
+      Anh_1.jpg                          -> outputs/Anh_1.jpg
+    """
+    path = Path(url_or_path)
+    # If it starts with /outputs/ or outputs/, strip that prefix
+    str_path = url_or_path.replace("\\", "/")
+    if "/outputs/" in str_path:
+        relative = str_path.split("/outputs/", 1)[1]
+        path = CONFIG.outputs_dir / relative
+    elif not path.is_absolute():
+        path = CONFIG.outputs_dir / path
+    resolved = path.resolve()
+    # Prevent path traversal
+    outputs_resolved = CONFIG.outputs_dir.resolve()
+    if outputs_resolved not in resolved.parents and resolved != outputs_resolved:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Đường dẫn ảnh không hợp lệ")
+    return resolved
 
 # KẾT NỐI DATABASE
 from api_base.app.models.base_db import get_db
@@ -102,7 +126,7 @@ def phan_tich_kich_ban(
     try:
         new_comic = Comic(
             UserID=current_user.UserID, 
-            Title="Truyện tranh tạo từ AI",
+            Title=payload.title,
             ScriptContent=payload.text,
             LayoutJsonPath=getattr(payload, 'layout_json', None) 
         )
@@ -137,7 +161,10 @@ async def upload_kich_ban(
 
 
 @router.post("/upload-layout", response_model=ParsedLayoutResponse)
-async def upload_layout(file: UploadFile = File(...)) -> ParsedLayoutResponse:
+async def upload_layout(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+) -> ParsedLayoutResponse:
     """Upload and parse user layout JSON."""
     try:
         content = await file.read()
@@ -201,12 +228,17 @@ def san_xuat_truyen(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> ProductionResponse:
-    # if not check_quota_and_log(db, current_user.UserID, "imagen-4.0"):
-    #     raise HTTPException(
-    #         status_code=429, 
-    #         detail="Bạn đang vẽ quá nhanh! Hãy chờ 1 phút để hệ thống làm mới hạn mức nhé."
-    #     )
-    # """Produce individual images and save frames to DB in user-specific folder."""
+    """Produce individual images and save frames to DB in user-specific folder."""
+    # Check plan-based generation quota
+    allowed, msg = check_generation_quota(db, current_user)
+    if not allowed:
+        raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=msg)
+
+    if not check_quota_and_log(db, current_user.UserID, "imagen-4.0"):
+        raise HTTPException(
+            status_code=429, 
+            detail="Bạn đang vẽ quá nhanh! Hãy chờ 1 phút để hệ thống làm mới hạn mức nhé."
+        )
     # Tạo thư mục riêng cho user
     user_output_dir = get_user_dir(CONFIG.outputs_dir, current_user.FullName or "Guest")
 
@@ -272,6 +304,8 @@ def san_xuat_truyen(
             db.add(new_frame)
             db.commit()
 
+        increment_generated_count(db, current_user)
+
         if index < len(payload.panels):
             time.sleep(20.0)
 
@@ -292,10 +326,9 @@ def xuat_pdf(
 
     image_paths: list[str] = []
     for item in payload.images:
-        filename = Path(item).name
-        path = CONFIG.outputs_dir / filename
+        path = _resolve_image_path(item)
         if not path.exists():
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Không tìm thấy ảnh: {filename}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Không tìm thấy ảnh: {path.name}")
         image_paths.append(str(path))
 
     pdf_name = f"anh_da_chon_{time.time_ns()}.pdf"
@@ -318,10 +351,9 @@ def xuat_trang(
 
     image_paths: list[str] = []
     for item in payload.images:
-        filename = Path(item).name
-        path = CONFIG.outputs_dir / filename
+        path = _resolve_image_path(item)
         if not path.exists():
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Không tìm thấy ảnh: {filename}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Không tìm thấy ảnh: {path.name}")
         image_paths.append(str(path))
 
     page_name = f"trang_ghep_{time.time_ns()}.jpg"
@@ -363,6 +395,23 @@ def ban_user(
     db.commit()
     return {"message": "Success"}
 
+@router.get("/plan-status")
+def plan_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Return current user's plan info and remaining quota."""
+    limit = get_plan_limit(current_user.Plan or "free")
+    used = current_user.ImagesGenerated or 0
+    remaining = max(0, limit - used)
+    return {
+        "plan": current_user.Plan or "free",
+        "limit": limit,
+        "used": used,
+        "remaining": remaining,
+        "is_pro": (current_user.Plan == "pro"),
+    }
+
 # API cấp thêm lượt vẽ cho User
 @router.post("/admin/grant_quota/{user_id}")
 def grant_quota(
@@ -380,6 +429,40 @@ def grant_quota(
     user.Quota = (user.Quota or 0) + extra_quota
     db.commit()
     return {"message": f"Đã cấp thêm {extra_quota} lượt vẽ cho User {user_id}"}
+
+@router.post("/admin/upgrade/{user_id}")
+def upgrade_user(
+    user_id: int,
+    plan: str = "pro",
+    db: Session = Depends(get_db),
+    admin: User = Depends(verify_admin)
+):
+    """Upgrade/downgrade a user's plan."""
+    if plan not in ("free", "pro"):
+        raise HTTPException(status_code=400, detail="Plan must be 'free' or 'pro'")
+    user = db.query(User).filter(User.UserID == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
+    user.Plan = plan
+    db.commit()
+    return {"message": f"Đã chuyển User {user_id} sang gói {plan}"}
+
+@router.post("/self-upgrade")
+def self_upgrade(
+    body: dict = Body(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """User tự nâng cấp lên Pro sau khi chuyển khoản."""
+    if current_user.Plan == "pro":
+        raise HTTPException(status_code=400, detail="Bạn đã là thành viên Pro rồi!")
+    transaction_ref = (body.get("transaction_ref") or "").strip()
+    current_user.Plan = "pro"
+    current_user.UpgradedAt = datetime.utcnow()
+    current_user.TransactionRef = transaction_ref or None
+    db.commit()
+    print(f"[UPGRADE] User {current_user.UserID} ({current_user.Email}) tự nâng cấp lên Pro. Ref: {transaction_ref}")
+    return {"message": "Chúc mừng! Bạn đã nâng cấp lên gói Pro thành công. 🎉"}
 
 # API lấy nhật ký hệ thống (để xem User nào vẽ nhiều nhất)
 @router.get("/admin/logs")

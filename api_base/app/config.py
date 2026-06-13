@@ -54,7 +54,20 @@ class AppConfig:
     password_salt: str = os.getenv("PASSWORD_SALT", "change-me")
     allowed_origins: List[str] = None
 
+    # OAuth
+    google_client_id: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    google_client_secret: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
+    github_client_id: str = os.getenv("GITHUB_CLIENT_ID", "")
+    github_client_secret: str = os.getenv("GITHUB_CLIENT_SECRET", "")
+    oauth_redirect_base: str = os.getenv("OAUTH_REDIRECT_BASE", "http://localhost:8000")
+
     def __post_init__(self) -> None:
+        if self.jwt_secret == "change-me":
+            import warnings
+            warnings.warn("JWT_SECRET is still set to default 'change-me'. Generate a strong random secret for production!")
+        if self.password_salt == "change-me":
+            import warnings
+            warnings.warn("PASSWORD_SALT is still set to default 'change-me'. Generate a random salt for production!")
         object.__setattr__(self, "vertex_project_id", self.vertex_project_id.strip())
         object.__setattr__(self, "vertex_location", self.vertex_location.strip() or "us-central1")
         object.__setattr__(self, "vertex_text_model", self.vertex_text_model.strip() or "gemini-1.5-flash")

@@ -27,7 +27,7 @@ if env_file.exists():
     load_dotenv(env_file)
 
 if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"C:\Users\VoVanHien\AppData\Roaming\gcloud\application_default_credentials.json"
+    print("WARNING: GOOGLE_APPLICATION_CREDENTIALS not set. Set it in .env file.")
 
 # 2. Khởi tạo FastAPI và Templates toàn cục
 app = FastAPI(title="Comic AI API", version="1.0.0")
@@ -75,8 +75,8 @@ def _startup():
         init_db()
         if get_database_url():
             create_tables()
-    except Exception:
-        pass
+    except Exception as exc:
+        print(f"WARNING: Database init failed: {exc}")
 
 app.include_router(base.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")

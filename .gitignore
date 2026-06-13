@@ -1,4 +1,12 @@
 node_modules/
 venv/
+.venv/
 .env
 vendor
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+Thumbs.db
+*.log
+workspace/

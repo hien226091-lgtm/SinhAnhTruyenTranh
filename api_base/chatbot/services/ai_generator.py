@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 import os
+import traceback
 from pathlib import Path
 from typing import List, Optional
 
@@ -19,16 +20,37 @@ from api_base.app.utils.helpers import sanitize_filename
 # Khởi tạo Vertex AI
 vertexai.init(project=CONFIG.vertex_project_id, location=CONFIG.vertex_location)
 
+# Imagen chỉ hỗ trợ các aspect ratio này
+IMAGEN_ASPECT_RATIOS = {"1:1", "9:16", "16:9", "4:3", "3:4"}
+IMAGEN_DEFAULT_ASPECT_RATIO = "1:1"
+
+def normalize_imagen_aspect_ratio(value: str | None) -> str:
+    """Convert generic aspect ratio to one supported by Imagen."""
+    normalized = normalize_aspect_ratio(value)
+    if normalized in IMAGEN_ASPECT_RATIOS:
+        return normalized
+    # Map các tỷ lệ không được hỗ trợ về tỷ lệ gần nhất
+    mapping = {
+        "1:4": "1:1", "1:8": "1:1", "2:3": "3:4", "3:2": "4:3",
+        "4:1": "1:1", "4:5": "3:4", "5:4": "4:3", "8:1": "16:9",
+        "21:9": "16:9",
+    }
+    return mapping.get(normalized, IMAGEN_DEFAULT_ASPECT_RATIO)
+
 def _session_inputs_dir(session_id: str) -> Path:
     return CONFIG.inputs_dir / "sessions" / sanitize_filename(session_id)
 
 def _tai_anh_tham_chieu(session_id: str = "default") -> tuple[List[Image.Image], bool]:
+    """Load reference images from session input directory."""
     session_dir = _session_inputs_dir(session_id)
     images = []
     if session_dir.exists():
         for p in session_dir.iterdir():
             if p.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}:
-                images.append(Image.open(p))
+                try:
+                    images.append(Image.open(p))
+                except Exception:
+                    pass
     return images, bool(images)
 
 class VertexImageGenerator:
@@ -44,18 +66,23 @@ class VertexImageGenerator:
             model = ImageGenerationModel.from_pretrained(model_name)
             time.sleep(1) 
             
-            images = model.generate_images(
+            response = model.generate_images(
                 prompt=prompt,
                 number_of_images=1,
                 aspect_ratio=aspect_ratio,
             )
             
-            if images:
-                images[0].save(location=output_path)
+            if response.images:
+                Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+                response.images[0].save(location=output_path)
                 return output_path
         except Exception as e:
-            self.last_error = str(e)
-            print(f"Lỗi Vertex AI: {self.last_error}")
+            self.last_error = f"{type(e).__name__}: {e}"
+            print(f"\n=== Lỗi Vertex AI ({model_name}) ===")
+            print(f"Loại: {type(e).__name__}")
+            print(f"Chi tiết: {e}")
+            traceback.print_exc()
+            print("=================================\n")
         return None
 
 _generator = VertexImageGenerator()
@@ -92,7 +119,7 @@ def tao_anh_truyen_tranh(
     path = _generator.generate(
         prompt=prompt,
         output_path=str(path_dau_ra),
-        aspect_ratio=normalize_aspect_ratio(aspect_ratio)
+        aspect_ratio=normalize_imagen_aspect_ratio(aspect_ratio)
     )
     
     return path

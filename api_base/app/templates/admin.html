@@ -1,130 +1,378 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <title>Admin Dashboard | AuraComic</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root { --primary: #22c55e; --bg-gradient: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); }
-        html[data-theme='blue'] { --primary: #3b82f6; --bg-gradient: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); }
-        html[data-theme='pink'] { --primary: #f43f5e; --bg-gradient: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); }
-        html[data-theme='gray'] { --primary: #64748b; --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); }
-
-        body { background: var(--bg-gradient) !important; min-height: 100vh; }
-        .sidebar { background: var(--primary) !important; color: white; min-height: 100vh; }
-        .nav-link { color: rgba(109, 53, 53, 0.8); }
-        .nav-link.active { background: rgba(0,0,0,0.15); color: white; }
-        .card { border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard — AuraComic Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="/static/studio.css" />
+  <style>
+    :root { --sidebar-w: 240px; --sidebar-bg: #065f46; }
+    html[data-theme="blue"] { --sidebar-bg: #1e40af; }
+    html[data-theme="pink"] { --sidebar-bg: #be123c; }
+    html[data-theme="gray"] { --sidebar-bg: #334155; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--font); background:var(--bg); color:var(--text); display:flex; min-height:100vh; }
+    .sidebar { width:var(--sidebar-w); background:var(--sidebar-bg); color:#fff; display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:100; transition:transform 0.3s; }
+    .sidebar-brand { padding:20px; border-bottom:1px solid rgba(255,255,255,0.1); }
+    .sidebar-brand h3 { font-size:17px; font-weight:700; display:flex; align-items:center; gap:10px; }
+    .sidebar-brand small { font-size:11px; opacity:0.7; display:block; margin-top:3px; }
+    .sidebar-nav { flex:1; padding:8px 0; }
+    .sidebar-nav a { display:flex; align-items:center; gap:10px; padding:11px 20px; color:rgba(255,255,255,0.75); text-decoration:none; font-size:13px; font-weight:500; transition:all 0.2s; border-left:3px solid transparent; }
+    .sidebar-nav a:hover, .sidebar-nav a.active { color:#fff; background:rgba(255,255,255,0.1); border-left-color:#fff; }
+    .sidebar-nav a i { width:18px; text-align:center; }
+    .sidebar-footer { padding:14px 20px; border-top:1px solid rgba(255,255,255,0.1); }
+    .sidebar-footer select { background:rgba(255,255,255,0.15); color:#fff; border:none; padding:6px 10px; border-radius:6px; font-size:12px; width:100%; cursor:pointer; outline:none; }
+    .sidebar-footer select option { color:#333; background:#fff; }
+    .main { margin-left:var(--sidebar-w); flex:1; padding:24px 28px; max-width:calc(100vw - var(--sidebar-w)); }
+    .main-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+    .main-header h1 { font-size:22px; font-weight:700; }
+    .main-header p { color:var(--text-secondary); font-size:13px; margin-top:2px; }
+    .badge-admin { background:var(--primary-light); color:var(--primary); font-size:11px; font-weight:600; padding:4px 12px; border-radius:20px; }
+    .menu-toggle { display:none; background:none; border:none; font-size:22px; color:var(--text); cursor:pointer; }
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:24px; }
+    .stat-card { background:var(--surface); backdrop-filter:blur(10px); border-radius:var(--radius-md); padding:18px; border:1px solid var(--border); transition:transform 0.2s; }
+    .stat-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+    .stat-card .stat-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; margin-bottom:10px; }
+    .stat-card .stat-value { font-size:24px; font-weight:700; }
+    .stat-card .stat-label { font-size:12px; color:var(--text-secondary); margin-top:2px; }
+    .tabs { display:flex; gap:4px; background:var(--surface); border-radius:var(--radius-md); padding:4px; border:1px solid var(--border); margin-bottom:18px; flex-wrap:wrap; }
+    .tabs button { flex:1; padding:9px 14px; border:none; background:transparent; border-radius:6px; font-size:12px; font-weight:500; color:var(--text-secondary); cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:5px; justify-content:center; min-width:80px; }
+    .tabs button.active { background:var(--primary); color:#fff; }
+    .tabs button:not(.active):hover { background:rgba(0,0,0,0.04); }
+    .panel { display:none; }
+    .panel.active { display:block; }
+    .card { background:var(--surface); backdrop-filter:blur(10px); border-radius:var(--radius-md); border:1px solid var(--border); overflow:hidden; }
+    .card-header { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+    .card-header h5 { font-size:14px; font-weight:600; }
+    .card-body { padding:18px; overflow-x:auto; }
+    .search-box { display:flex; align-items:center; gap:6px; background:var(--bg); border-radius:6px; padding:5px 10px; border:1px solid var(--border); }
+    .search-box i { color:var(--text-muted); font-size:12px; }
+    .search-box input { border:none; background:transparent; outline:none; font-size:12px; color:var(--text); width:160px; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    thead th { text-align:left; padding:8px 10px; font-weight:600; color:var(--text-secondary); font-size:11px; text-transform:uppercase; letter-spacing:0.3px; border-bottom:2px solid var(--border); white-space:nowrap; }
+    tbody td { padding:8px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    tbody tr:hover { background:rgba(0,0,0,0.015); }
+    .badge { padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; display:inline-block; }
+    .badge-success { background:#d1fae5; color:#065f46; }
+    .badge-danger { background:#fee2e2; color:#991b1b; }
+    .badge-info { background:#dbeafe; color:#1e40af; }
+    .badge-warning { background:#fef3c7; color:#92400e; }
+    .btn { padding:5px 10px; border-radius:6px; font-size:11px; font-weight:600; border:none; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:4px; }
+    .btn-primary { background:var(--primary); color:#fff; }
+    .btn-primary:hover { background:var(--primary-hover); }
+    .btn-danger { background:var(--danger); color:#fff; }
+    .btn-success { background:var(--success); color:#fff; }
+    .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+    .btn-outline:hover { background:var(--bg); }
+    .log-item { padding:8px 0; border-bottom:1px solid var(--border); font-size:12px; display:flex; justify-content:space-between; align-items:center; }
+    .log-item:last-child { border-bottom:none; }
+    .log-item .log-time { color:var(--text-muted); font-size:11px; }
+    .empty-state { text-align:center; padding:30px 20px; color:var(--text-secondary); }
+    .empty-state i { font-size:32px; margin-bottom:8px; opacity:0.5; }
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.show { display:flex; }
+    .modal { background:#fff; border-radius:var(--radius-lg); width:360px; max-width:90vw; padding:22px; box-shadow:0 16px 48px rgba(0,0,0,0.15); }
+    .modal h3 { font-size:16px; margin-bottom:6px; }
+    .modal p { font-size:13px; color:var(--text-secondary); margin-bottom:16px; }
+    .modal-actions { display:flex; gap:8px; justify-content:flex-end; }
+    .input-modal { width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:6px; font-size:13px; margin-bottom:14px; outline:none; }
+    .input-modal:focus { border-color:var(--primary); }
+    @media (max-width:768px) {
+      .sidebar { transform:translateX(-100%); }
+      .sidebar.open { transform:translateX(0); }
+      .main { margin-left:0; max-width:100vw; padding:16px; }
+      .menu-toggle { display:block; }
+      .stats-grid { grid-template-columns:repeat(2,1fr); }
+    }
+  </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-2 sidebar p-3">
-                <h4 class="text-center py-2">AuraComic Admin</h4>
-                <hr>
-                <ul class="nav flex-column">
-                    <li class="nav-item"><a href="#" class="nav-link active"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
-                    <li class="nav-item"><a href="/ui" class="nav-link"><i class="fas fa-arrow-left me-2"></i>Về Studio</a></li>
-                </ul>
-                <div class="mt-auto p-3 position-absolute bottom-0">
-                    <small>Chủ đề giao diện:</small>
-                    <select id="themeSelector" class="form-select form-select-sm mt-1">
-                        <option value="green">🟢 Xanh lá</option>
-                        <option value="blue">🔵 Xanh dương</option>
-                        <option value="pink">🔴 Hồng đỏ</option>
-                        <option value="gray">⚫ Xám</option>
-                    </select>
-                </div>
-            </div>
+  <script>
+    const token = localStorage.getItem('access_token');
+    if (!token) { window.location.href = '/login'; }
+    const theme = localStorage.getItem('app-theme') || 'green';
+    document.documentElement.setAttribute('data-theme', theme);
+  </script>
 
-            <div class="col-md-10 p-4">
-                <h2 class="mb-4">Dashboard Tổng Quan</h2>
-                
-                <ul class="nav nav-tabs mb-4">
-                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#userTab">Người dùng</button></li>
-                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#comicTab" onclick="loadComics()">Quản lý Truyện</button></li>
-                </ul>
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <h3><i class="fas fa-palette"></i> AuraComic</h3>
+      <small>Admin Dashboard</small>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="active" data-tab="overview"><i class="fas fa-th-large"></i> Tổng quan</a>
+      <a href="#" data-tab="users"><i class="fas fa-users"></i> Người dùng</a>
+      <a href="#" data-tab="comics"><i class="fas fa-book-open"></i> Truyện</a>
+      <a href="#" data-tab="logs"><i class="fas fa-history"></i> Nhật ký</a>
+      <a href="/ui"><i class="fas fa-arrow-left"></i> Về Studio</a>
+    </nav>
+    <div class="sidebar-footer">
+      <select id="themeSelector">
+        <option value="green">🟢 Xanh lá</option>
+        <option value="blue">🔵 Xanh dương</option>
+        <option value="pink">🔴 Hồng đỏ</option>
+        <option value="gray">⚫ Xám</option>
+      </select>
+    </div>
+  </div>
 
-                <div class="tab-content">
-                    <div class="tab-pane fade show active" id="userTab">
-                        <div class="card p-4">
-                            <div class="d-flex justify-content-between mb-3">
-                                <h5>Danh sách người dùng</h5>
-                                <input type="text" id="searchUser" class="form-control w-25" placeholder="Tìm theo email...">
-                            </div>
-                            <table class="table table-hover align-middle">
-                                <thead class="table-light"><tr><th>ID</th><th>Email</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
-                                <tbody id="userTable"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="tab-pane fade" id="comicTab">
-                        <div class="card p-4">
-                            <h5>Danh sách truyện đã tạo</h5>
-                            <table class="table table-hover align-middle mt-3">
-                                <thead class="table-light"><tr><th>ID Truyện</th><th>User ID</th><th>Ngày tạo</th><th>Hành động</th></tr></thead>
-                                <tbody id="comicTable"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <!-- Main -->
+  <div class="main">
+    <div class="main-header">
+      <div>
+        <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        <h1>Dashboard</h1>
+        <p>Quản lý hệ thống AuraComic Studio</p>
+      </div>
+      <span class="badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        const token = localStorage.getItem('access_token');
-        
-        // Theme logic
-        const themeSelector = document.getElementById('themeSelector');
-        themeSelector.value = localStorage.getItem('app-theme') || 'green';
-        document.documentElement.setAttribute('data-theme', themeSelector.value);
-        themeSelector.addEventListener('change', (e) => {
-            document.documentElement.setAttribute('data-theme', e.target.value);
-            localStorage.setItem('app-theme', e.target.value);
-        });
+    <!-- Stats -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card"><div class="stat-icon" style="background:#3b82f6"><i class="fas fa-users"></i></div><div class="stat-value" id="statUsers">-</div><div class="stat-label">Người dùng</div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:#10b981"><i class="fas fa-book-open"></i></div><div class="stat-value" id="statComics">-</div><div class="stat-label">Truyện đã tạo</div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:#f59e0b"><i class="fas fa-server"></i></div><div class="stat-value" id="statRequests">-</div><div class="stat-label">Tổng request</div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:#ef4444"><i class="fas fa-ban"></i></div><div class="stat-value" id="statBanned">-</div><div class="stat-label">Bị khóa</div></div>
+    </div>
 
-        // Load Users
-        async function loadUsers() {
-            const res = await fetch('/api/comic/admin/users', { headers: { 'Authorization': 'Bearer ' + token }});
-            const users = await res.json();
-            const tbody = document.getElementById('userTable');
-            tbody.innerHTML = users.map(u => `<tr>
-                <td>${u.UserID}</td><td>${u.Email}</td>
-                <td><span class="badge ${u.is_banned ? 'bg-danger' : 'bg-success'}">${u.is_banned ? 'Bị khóa' : 'Hoạt động'}</span></td>
-                <td>
-                    <button onclick="grantQuota(${u.UserID})" class="btn btn-sm btn-outline-primary"><i class="fas fa-plus"></i> Quota</button>
-                    <button onclick="banUser(${u.UserID}, ${!u.is_banned})" class="btn btn-sm ${u.is_banned ? 'btn-outline-success' : 'btn-outline-danger'}">${u.is_banned ? 'Mở' : 'Khóa'}</button>
-                </td>
-            </tr>`).join('');
-        }
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="active" data-tab="overview"><i class="fas fa-th-large"></i> Tổng quan</button>
+      <button data-tab="users"><i class="fas fa-users"></i> Người dùng</button>
+      <button data-tab="comics"><i class="fas fa-book-open"></i> Truyện</button>
+      <button data-tab="logs"><i class="fas fa-history"></i> Nhật ký</button>
+    </div>
 
-        // Load Comics
-        async function loadComics() {
-            const res = await fetch('/api/comic/admin/all_comics', { headers: { 'Authorization': 'Bearer ' + token }});
-            const comics = await res.json();
-            const tbody = document.getElementById('comicTable');
-            tbody.innerHTML = comics.map(c => `<tr>
-                <td>${c.ComicID}</td><td>${c.UserID}</td><td>${c.CreatedAt || 'N/A'}</td>
-                <td><button onclick="deleteComic(${c.ComicID})" class="btn btn-sm btn-outline-danger">Xóa</button></td>
-            </tr>`).join('');
-        }
+    <!-- Tab Content -->
+    <div class="panel active" id="panel-overview">
+      <div class="card">
+        <div class="card-header"><h5><i class="fas fa-clock"></i> Hoạt động gần đây</h5></div>
+        <div class="card-body" id="recentActivity"><div class="empty-state"><i class="fas fa-inbox"></i><p>Chưa có hoạt động</p></div></div>
+      </div>
+    </div>
 
-        async function deleteComic(id) {
-            if(!confirm("Bạn chắc chắn muốn xóa bộ truyện này?")) return;
-            await fetch(`/api/comic/admin/delete_comic/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }});
-            loadComics();
-        }
+    <div class="panel" id="panel-users">
+      <div class="card">
+        <div class="card-header">
+          <h5><i class="fas fa-users"></i> Danh sách người dùng</h5>
+          <div class="search-box"><i class="fas fa-search"></i><input type="text" id="searchUser" placeholder="Tìm email..." /></div>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ID</th><th>Email</th><th>FullName</th><th>Plan</th><th>Đã sinh</th><th>Còn lại</th><th>Hạn mức</th><th>Ngày tạo</th><th>Trạng thái</th><th>Nâng cấp</th><th>Hành động</th></tr></thead>
+              <tbody id="userTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        // Các hàm banUser, grantQuota giữ nguyên...
-        async function grantQuota(id) { const amount = prompt("Số lượt cấp thêm:"); if(amount) fetch(`/api/comic/admin/grant_quota/${id}?extra_quota=${amount}`, {method:'POST', headers:{'Authorization': 'Bearer ' + token}}).then(()=>alert("OK")); }
-        async function banUser(id, status) { await fetch(`/api/comic/admin/ban_user/${id}?is_banned=${status}`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }}); loadUsers(); }
+    <div class="panel" id="panel-comics">
+      <div class="card">
+        <div class="card-header">
+          <h5><i class="fas fa-book-open"></i> Danh sách truyện</h5>
+          <div class="search-box"><i class="fas fa-search"></i><input type="text" id="searchComic" placeholder="Tìm ID..." /></div>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ID</th><th>User ID</th><th>Title</th><th>Ngày tạo</th><th>Hành động</th></tr></thead>
+              <tbody id="comicTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        loadUsers();
-    </script>
+    <div class="panel" id="panel-logs">
+      <div class="card">
+        <div class="card-header"><h5><i class="fas fa-history"></i> Nhật ký request</h5></div>
+        <div class="card-body" id="logsContainer"><div class="empty-state"><i class="fas fa-inbox"></i><p>Chưa có nhật ký</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal">
+      <h3 id="modalTitle">Xác nhận</h3>
+      <p id="modalMessage">Bạn chắc chắn?</p>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="modalCancel">Hủy</button>
+        <button class="btn btn-danger" id="modalConfirm">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="promptModal">
+    <div class="modal">
+      <h3 id="promptTitle">Nhập số lượng</h3>
+      <input type="number" id="promptInput" class="input-modal" placeholder="Nhập số..." />
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="promptCancel">Hủy</button>
+        <button class="btn btn-primary" id="promptConfirm">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Theme
+    const themeSelector = document.getElementById('themeSelector');
+    themeSelector.value = localStorage.getItem('app-theme') || 'green';
+    document.documentElement.setAttribute('data-theme', themeSelector.value);
+    themeSelector.addEventListener('change', e => {
+      document.documentElement.setAttribute('data-theme', e.target.value);
+      localStorage.setItem('app-theme', e.target.value);
+    });
+    // Mobile menu toggle
+    document.getElementById('menuToggle').onclick = () => document.getElementById('sidebar').classList.toggle('open');
+    // Tab switching
+    function switchTab(tab) {
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+      document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
+      document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.toggle('active', a.dataset.tab === tab));
+      if (tab === 'comics') loadComics();
+      if (tab === 'logs') loadLogs();
+      document.getElementById('sidebar').classList.remove('open');
+    }
+    document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+    document.querySelectorAll('.sidebar-nav a[data-tab]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); switchTab(a.dataset.tab); }));
+
+    // Modal helpers
+    let modalResolve = null;
+    function showConfirm(title, msg) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalMessage').textContent = msg;
+      document.getElementById('confirmModal').classList.add('show');
+      return new Promise(resolve => { modalResolve = resolve; });
+    }
+    document.getElementById('modalConfirm').onclick = () => { document.getElementById('confirmModal').classList.remove('show'); if (modalResolve) modalResolve(true); };
+    document.getElementById('modalCancel').onclick = () => { document.getElementById('confirmModal').classList.remove('show'); if (modalResolve) modalResolve(false); };
+    function showPrompt(title) {
+      document.getElementById('promptTitle').textContent = title;
+      document.getElementById('promptInput').value = '';
+      document.getElementById('promptModal').classList.add('show');
+      return new Promise(resolve => { modalResolve = resolve; });
+    }
+    document.getElementById('promptConfirm').onclick = () => { const v = document.getElementById('promptInput').value; document.getElementById('promptModal').classList.remove('show'); if (modalResolve) modalResolve(v); };
+    document.getElementById('promptCancel').onclick = () => { document.getElementById('promptModal').classList.remove('show'); if (modalResolve) modalResolve(null); };
+    function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[c]); }
+
+    // Load data
+    async function loadStats() {
+      try {
+        const [usersRes, comicsRes, statsRes] = await Promise.all([
+          fetch('/api/comic/admin/users', { headers: { Authorization: 'Bearer ' + token }}),
+          fetch('/api/comic/admin/all_comics', { headers: { Authorization: 'Bearer ' + token }}),
+          fetch('/api/comic/admin/stats', { headers: { Authorization: 'Bearer ' + token }})
+        ]);
+        const users = await usersRes.json();
+        const comics = await comicsRes.json();
+        const stats = await statsRes.json();
+        const totalRequests = stats.stats ? stats.stats.reduce((s, x) => s + x.count, 0) : 0;
+        document.getElementById('statUsers').textContent = users.length;
+        document.getElementById('statComics').textContent = comics.length;
+        document.getElementById('statRequests').textContent = totalRequests;
+        document.getElementById('statBanned').textContent = users.filter(u => u.is_banned).length;
+      } catch(e) { console.error(e); }
+    }
+    async function loadUsers() {
+      try {
+        const res = await fetch('/api/comic/admin/users', { headers: { Authorization: 'Bearer ' + token }});
+        const users = await res.json();
+        const q = document.getElementById('searchUser').value.toLowerCase();
+        const filtered = users.filter(u => u.Email.toLowerCase().includes(q));
+        document.getElementById('userTable').innerHTML = filtered.map(u => `<tr>
+          <td><strong>${esc(u.UserID)}</strong></td>
+          <td>${esc(u.Email)}</td>
+          <td>${esc(u.FullName || '-')}</td>
+          <td><span class="badge ${u.Plan === 'pro' ? 'badge-warning' : 'badge-info'}">${u.Plan === 'pro' ? 'PRO' : 'Free'}</span></td>
+          <td>${u.ImagesGenerated || 0}</td>
+          <td style="font-weight:700;color:${(() => { const limit = u.Plan === 'pro' ? 9999 : 20; const rem = limit - (u.ImagesGenerated || 0); return rem <= 0 ? 'var(--danger)' : rem <= 5 ? 'var(--warning)' : 'var(--success)'; })()}">${(() => { const limit = u.Plan === 'pro' ? 9999 : 20; const rem = limit - (u.ImagesGenerated || 0); return rem > 0 ? rem : 0; })()}</td>
+          <td>${u.Plan === 'pro' ? '9999' : '20'}</td>
+          <td>${u.CreatedAt ? new Date(u.CreatedAt).toLocaleDateString('vi-VN') : '-'}</td>
+          <td><span class="badge ${u.is_banned ? 'badge-danger' : 'badge-success'}">${u.is_banned ? 'Bị khóa' : 'Hoạt động'}</span></td>
+          <td style="font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis">${u.UpgradedAt ? new Date(u.UpgradedAt).toLocaleDateString('vi-VN') + (u.TransactionRef ? '<br/><small>' + esc(u.TransactionRef) + '</small>' : '') : '-'}</td>
+          <td style="white-space:nowrap">
+            <button class="btn btn-primary" onclick="upgradeUser(${u.UserID}, '${u.Plan === 'pro' ? 'free' : 'pro'}')">${u.Plan === 'pro' ? 'Hạ Free' : 'Lên Pro'}</button>
+            <button class="btn btn-success" onclick="grantQuota(${u.UserID})"><i class="fas fa-plus"></i> Quota</button>
+            <button class="btn ${u.is_banned ? 'btn-success' : 'btn-danger'}" onclick="toggleBan(${u.UserID}, ${!!u.is_banned})">${u.is_banned ? '<i class="fas fa-unlock"></i> Mở' : '<i class="fas fa-ban"></i> Khóa'}</button>
+          </td>
+        </tr>`).join('');
+      } catch(e) { console.error(e); }
+    }
+    document.getElementById('searchUser').addEventListener('input', loadUsers);
+    async function loadComics() {
+      try {
+        const res = await fetch('/api/comic/admin/all_comics', { headers: { Authorization: 'Bearer ' + token }});
+        const comics = await res.json();
+        const q = document.getElementById('searchComic').value.toLowerCase();
+        const filtered = comics.filter(c => String(c.ComicID).includes(q));
+        document.getElementById('comicTable').innerHTML = filtered.map(c => `<tr>
+          <td><strong>${esc(c.ComicID)}</strong></td>
+          <td>${esc(c.UserID)}</td>
+          <td>${esc(c.Title || 'Untitled')}</td>
+          <td>${c.CreatedAt ? new Date(c.CreatedAt).toLocaleDateString('vi-VN') : '-'}</td>
+          <td><button class="btn btn-danger" onclick="deleteComic(${c.ComicID})"><i class="fas fa-trash"></i> Xóa</button></td>
+        </tr>`).join('');
+      } catch(e) { console.error(e); }
+    }
+    document.getElementById('searchComic').addEventListener('input', loadComics);
+    async function loadLogs() {
+      try {
+        const res = await fetch('/api/comic/admin/logs', { headers: { Authorization: 'Bearer ' + token }});
+        const logs = await res.json();
+        const container = document.getElementById('logsContainer');
+        if (!logs.length) { container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>Chưa có nhật ký</p></div>'; return; }
+        container.innerHTML = logs.map(log => `<div class="log-item">
+          <div><strong>User #${esc(log.UserID)}</strong> — ${esc(log.ModelName)} <span class="badge badge-info">${esc(log.Status)}</span></div>
+          <div class="log-time">${log.Timestamp ? new Date(log.Timestamp).toLocaleString('vi-VN') : '-'}</div>
+        </div>`).join('');
+      } catch(e) { console.error(e); }
+    }
+    async function loadRecentActivity() {
+      try {
+        const res = await fetch('/api/comic/admin/logs', { headers: { Authorization: 'Bearer ' + token }});
+        const logs = await res.json();
+        if (!logs.length) return;
+        document.getElementById('recentActivity').innerHTML = logs.slice(0, 10).map(log => `<div class="log-item">
+          <div><strong>User #${esc(log.UserID)}</strong> gọi <code>${esc(log.ModelName)}</code> <span class="badge badge-info">${esc(log.Status)}</span></div>
+          <div class="log-time">${log.Timestamp ? new Date(log.Timestamp).toLocaleString('vi-VN') : '-'}</div>
+        </div>`).join('');
+      } catch(e) { console.error(e); }
+    }
+    async function toggleBan(id, isBanned) {
+      if (!await showConfirm(isBanned ? 'Mở khóa' : 'Khóa người dùng', isBanned ? 'Mở khóa người dùng này?' : 'Người dùng sẽ không thể đăng nhập.')) return;
+      await fetch('/api/comic/admin/ban_user/' + id + '?is_banned=' + !isBanned, { method: 'POST', headers: { Authorization: 'Bearer ' + token }});
+      loadUsers(); loadStats();
+    }
+    async function grantQuota(id) {
+      const amount = await showPrompt('Nhập lượt cấp thêm cho User #' + id);
+      if (amount === null || amount === '' || isNaN(amount) || Number(amount) <= 0) return;
+      await fetch('/api/comic/admin/grant_quota/' + id + '?extra_quota=' + Number(amount), { method: 'POST', headers: { Authorization: 'Bearer ' + token }});
+      loadUsers();
+    }
+    async function deleteComic(id) {
+      if (!await showConfirm('Xóa truyện', 'Xóa bộ truyện #' + id + '? Không thể hoàn tác.')) return;
+      await fetch('/api/comic/admin/delete_comic/' + id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token }});
+      loadComics(); loadStats();
+    }
+    async function upgradeUser(id, plan) {
+      const label = plan === 'pro' ? 'lên Pro' : 'xuống Free';
+      if (!await showConfirm('Đổi gói', 'Chuyển User #' + id + ' ' + label + '?')) return;
+      await fetch('/api/comic/admin/upgrade/' + id + '?plan=' + plan, { method: 'POST', headers: { Authorization: 'Bearer ' + token }});
+      loadUsers();
+    }
+
+    // Init
+    loadStats();
+    loadUsers();
+    loadRecentActivity();
+  </script>
 </body>
 </html>

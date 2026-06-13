@@ -90,11 +90,23 @@ def create_tables() -> None:
         if "users" in tables:
             cols = [c["name"] for c in inspector.get_columns("users")]
             if "FullName" not in cols:
-                # Best-effort ALTER TABLE for common SQL engines (MySQL/Postgres/SQLite).
-                # Use VARCHAR(255) and allow NULL so it won't block existing rows.
                 with engine.begin() as conn:
                     conn.execute(text("ALTER TABLE users ADD COLUMN FullName VARCHAR(255) NULL"))
+            if "is_banned" not in cols:
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN is_banned INTEGER DEFAULT 0"))
+            if "Plan" not in cols:
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN Plan VARCHAR(20) DEFAULT 'free'"))
+            if "ImagesGenerated" not in cols:
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN ImagesGenerated INTEGER DEFAULT 0"))
+            if "UpgradedAt" not in cols:
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN UpgradedAt DATETIME NULL"))
+            if "TransactionRef" not in cols:
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN TransactionRef VARCHAR(100) NULL"))
     except Exception:
-        # Don't fail table creation on migration attempts; log optional in future.
         pass
 

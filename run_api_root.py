@@ -11,7 +11,7 @@ import uvicorn
 
 # Set GOOGLE_APPLICATION_CREDENTIALS BEFORE importing anything else
 if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"C:\Users\VoVanHien\AppData\Roaming\gcloud\application_default_credentials.json"
+    print("WARNING: GOOGLE_APPLICATION_CREDENTIALS not set. Set it in .env file.")
 
 
 def parse_args() -> argparse.Namespace:

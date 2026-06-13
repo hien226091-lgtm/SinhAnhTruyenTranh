@@ -2,388 +2,130 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tạo tài khoản — AuraComic Studio</title>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/studio.css" />
   <style>
-    /* NHÚNG TRỰC TIẾP CSS - TÔNG XANH EMERALD (ĐỒNG BỘ VỚI STUDIO) */
-    /* =========================================================
-   HỆ THỐNG GIAO DIỆN MÀU (TÍCH HỢP CHO CẢ STUDIO & AUTH)
-   ========================================================= */
-
-/* 1. MÀU XANH LÁ (Mặc định) */
-:root, html[data-theme="green"] {
-  --primary: #10b981; 
-  --primary-hover: #059669; 
-  --bg-gradient: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-  --surface: rgba(255, 255, 255, 0.85);
-  --text-main: #064e3b;
-  --text-muted: #475569;
-  --border: #a7f3d0;
-  --input-focus: rgba(16, 185, 129, 0.15);
-  --shadow-sm: 0 4px 12px rgba(16, 185, 129, 0.05);
-  --shadow-glow: 0 0 15px rgba(16, 185, 129, 0.3);
-  
-  /* Ánh xạ cho trang Đăng nhập/Đăng ký */
-  --primary-green: var(--primary);
-  --text-dark: var(--text-main);
-}
-
-/* 2. MÀU XANH DƯƠNG */
-html[data-theme="blue"] {
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --bg-gradient: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  --text-main: #1e3a8a;
-  --border: #bfdbfe;
-  --input-focus: rgba(59, 130, 246, 0.15);
-  --shadow-sm: 0 4px 12px rgba(59, 130, 246, 0.05);
-  --shadow-glow: 0 0 15px rgba(59, 130, 246, 0.3);
-  --primary-green: var(--primary);
-  --text-dark: var(--text-main);
-}
-
-/* 3. MÀU HỒNG ĐỎ */
-html[data-theme="pink"] {
-  --primary: #f43f5e;
-  --primary-hover: #e11d48;
-  --bg-gradient: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
-  --text-main: #881337;
-  --border: #fecdd3;
-  --input-focus: rgba(244, 63, 94, 0.15);
-  --shadow-sm: 0 4px 12px rgba(244, 63, 94, 0.05);
-  --shadow-glow: 0 0 15px rgba(244, 63, 94, 0.3);
-  --primary-green: var(--primary);
-  --text-dark: var(--text-main);
-}
-
-/* 4. MÀU XÁM TỐI GIẢN */
-html[data-theme="gray"] {
-  --primary: #64748b;
-  --primary-hover: #475569;
-  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  --text-main: #0f172a;
-  --border: #cbd5e1;
-  --input-focus: rgba(100, 116, 139, 0.15);
-  --shadow-sm: 0 4px 12px rgba(100, 116, 139, 0.05);
-  --shadow-glow: 0 0 15px rgba(100, 116, 139, 0.3);
-  --primary-green: var(--primary);
-  --text-dark: var(--text-main);
-}
-
-/* Cập nhật lại màu nền của body để nó tự nhận gradient theo Theme */
-body {
-    background: var(--bg-gradient) !important;
-}
-
-    body {
-      margin: 0;
-      font-family: 'Inter', sans-serif;
-      /* Nền trang đổi sang dải màu xanh Mint */
-      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-      color: var(--text-dark);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; background:var(--bg-gradient); font-family:var(--font); }
+    .auth-card { background:#fff; border-radius:var(--radius-xl); box-shadow:var(--shadow-lg); display:flex; width:860px; max-width:100%; min-height:520px; overflow:hidden; }
+    .auth-left { width:42%; background:linear-gradient(135deg, var(--primary-light), rgba(16,185,129,0.04)); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; text-align:center; }
+    .auth-left .logo-mark { font-size:28px; font-weight:800; color:var(--primary); margin-bottom:8px; letter-spacing:-0.5px; }
+    .auth-left .brand-sub { color:var(--text-secondary); font-size:14px; line-height:1.6; }
+    .auth-right { width:58%; padding:44px; display:flex; flex-direction:column; justify-content:center; }
+    .auth-header { display:flex; justify-content:flex-end; margin-bottom:20px; }
+    .toggle-tabs { display:inline-flex; background:var(--primary-light); border-radius:100px; padding:4px; }
+    .tab { padding:8px 20px; font-size:13px; font-weight:600; color:var(--text-secondary); border-radius:100px; cursor:pointer; transition:all 0.2s; text-decoration:none; }
+    .tab.active { background:#fff; color:var(--primary); box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+    .auth-right h3 { margin:0 0 4px; font-size:26px; color:var(--text); }
+    .auth-right .sub { color:var(--text-secondary); font-size:14px; margin-bottom:24px; }
+    .auth-form label { display:block; margin-top:16px; margin-bottom:6px; font-size:13px; font-weight:600; color:var(--text); }
+    .auth-form input { width:100%; padding:12px 14px; border-radius:var(--radius-md); border:1.5px solid var(--border); background:#fafcff; font-size:14px; font-family:var(--font); color:var(--text); transition:all 0.2s; outline:none; box-sizing:border-box; }
+    .auth-form input:focus { border-color:var(--primary); box-shadow:0 0 0 4px var(--primary-light); background:#fff; }
+    .btn-primary { width:100%; margin-top:24px; padding:12px; font-size:14px; }
+    .form-message { font-size:13px; padding:10px 14px; border-radius:var(--radius-sm); margin-top:12px; text-align:center; font-weight:500; display:none; background:#fee2e2; color:#991b1b; }
+    .muted-text { color:var(--text-secondary); text-align:center; margin-top:20px; font-size:13px; }
+    .link-bold { color:var(--primary); font-weight:600; text-decoration:none; }
+    .link-bold:hover { text-decoration:underline; }
+    .close-btn { position:absolute; top:16px; right:16px; width:32px; height:32px; border-radius:50%; background:var(--primary-light); color:var(--text-secondary); display:flex; align-items:center; justify-content:center; font-size:20px; text-decoration:none; transition:all 0.2s; border:1px solid var(--border); cursor:pointer; }
+    .close-btn:hover { background:#fee2e2; color:#ef4444; transform:rotate(90deg); }
+    .auth-card { position:relative; }
+    @media (max-width:768px) {
+      .auth-card { flex-direction:column; height:100vh; border-radius:0; box-shadow:none; width:100%; }
+      .auth-left { width:100%; padding:28px 20px; }
+      .auth-right { width:100%; padding:28px 20px; }
     }
-
-    .auth-overlay { 
-      position: fixed; inset: 0; display: flex; 
-      align-items: center; justify-content: center; 
-      background: rgba(6, 78, 59, 0.3); /* Phủ mờ tông xanh rêu */
-      backdrop-filter: blur(8px); z-index: 1000; padding: 20px;
-    }
-
-    .auth-card { 
-      width: 900px; max-width: 100%; min-height: 560px;
-      display: flex; flex-direction: row; overflow: hidden; 
-      border-radius: 24px; background: var(--glass-bg);
-      box-shadow: 0 24px 48px rgba(6, 78, 59, 0.15), inset 0 0 0 1px rgba(255,255,255,0.8); 
-    }
-
-    .auth-left { 
-      width: 45%; 
-      /* Nền cột trái (Art) ngả xanh Mint đậm hơn một chút */
-      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); 
-      padding: 40px; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; text-align: center;
-    }
-
-    .auth-left .logo-mark { font-size: 32px; font-weight: 800; color: var(--primary-green); letter-spacing: -0.5px; margin-bottom: 8px; }
-    .auth-left .brand-sub { color: var(--text-dark); font-size: 15px; line-height: 1.5; opacity: 0.8; }
-
-    .auth-right { 
-      width: 55%; background: #ffffff; padding: 48px; 
-      display: flex; flex-direction: column; justify-content: center;
-    }
-
-    /* Tabs điều hướng */
-    .auth-header { display: flex; justify-content: flex-end; margin-bottom: 24px; }
-    .toggle-tabs { display: inline-flex; background: #ecfdf5; border-radius: 100px; padding: 4px; }
-    .tab { padding: 8px 20px; font-size: 14px; font-weight: 600; color: var(--muted); border-radius: 100px; cursor: pointer; transition: all 0.2s; }
-    .tab.active { background: #ffffff; color: var(--primary-green); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1); }
-
-    /* Forms */
-    .auth-form label { display: flex; justify-content: space-between; margin-top: 20px; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: var(--text-dark); }
-    .auth-form label .forgot { color: var(--primary-green); text-decoration: none; font-weight: 500; font-size: 13px; }
-    .auth-form label .forgot:hover { text-decoration: underline; color: var(--text-dark); }
-    
-    .auth-form input { width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--input-border); background: var(--input-bg); font-size: 15px; font-family: 'Inter', sans-serif; color: var(--text-dark); transition: all 0.2s ease; box-sizing: border-box; }
-    .auth-form input:focus { outline: none; border-color: var(--primary-green); background: #ffffff; box-shadow: 0 0 0 4px var(--input-focus); }
-    .auth-form input::placeholder { color: #94a3b8; }
-
-    /* Buttons - Gradient Xanh lá */
-    .btn.primary { width: 100%; background: linear-gradient(135deg, #34d399, var(--primary-green)); color: #fff; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; font-family: 'Inter', sans-serif; border: none; margin-top: 28px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
-    .btn.primary:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); }
-
-    .form-message { font-size: 14px; padding: 12px; border-radius: 10px; margin-top: 16px; text-align: center; font-weight: 500; background: #fee2e2; color: #991b1b; }
-    
-    .muted-text { color: var(--muted); text-align: center; margin-top: 24px; font-size: 14px; }
-    .link-bold { color: var(--primary-green); font-weight: 600; text-decoration: none; }
-    .link-bold:hover { text-decoration: underline; }
-
-    /* Responsive */
-    @media (max-width: 768px) { 
-      .auth-overlay { padding: 0; background: #ffffff; backdrop-filter: none; }
-      .auth-card { flex-direction: column; height: 100vh; border-radius: 0; box-shadow: none; } 
-      .auth-left { width: 100%; padding: 32px 20px; flex: none; } 
-      .auth-right { width: 100%; padding: 32px 20px; flex: 1; justify-content: flex-start; } 
-    }
-
-    /* =========================================================
-       NÚT THOÁT (CLOSE BUTTON) Ở GÓC PHẢI
-       ========================================================= */
-    .auth-card {
-      position: relative; /* Bắt buộc có dòng này để nút X canh góc theo thẻ card */
-    }
-
-    .close-btn {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--input-bg);
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      line-height: 1;
-      text-decoration: none;
-      transition: all 0.3s ease;
-      z-index: 10;
-      border: 1px solid var(--input-border);
-      cursor: pointer;
-    }
-
-    .close-btn:hover {
-      background: #fee2e2; /* Đổi nền sang đỏ nhạt cảnh báo thoạt */
-      color: #ef4444; /* Chữ X màu đỏ */
-      border-color: #fecaca;
-      transform: rotate(90deg); /* Hiệu ứng xoay 90 độ cực ngầu khi di chuột vào */
-    }
-
-    /* =========================================================
-       NÚT ĐĂNG NHẬP MẠNG XÃ HỘI (GOOGLE & GITHUB)
-       ========================================================= */
-    .social-login {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    
-    .btn-social {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 12px;
-      background: #ffffff;
-      border: 1px solid var(--input-border);
-      border-radius: 12px;
-      color: var(--text-dark);
-      font-size: 14px;
-      font-weight: 600;
-      font-family: 'Inter', sans-serif;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .btn-social:hover {
-      background: #f8fafc;
-      border-color: var(--primary-green);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-    
-    .btn-social svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    /* Đường kẻ "Hoặc tiếp tục với" */
-    .divider {
-      display: flex;
-      align-items: center;
-      text-align: center;
-      margin-bottom: 20px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-    
-    .divider::before, .divider::after {
-      content: '';
-      flex: 1;
-      border-bottom: 1px solid var(--input-border);
-    }
-    
-    .divider::before { margin-right: 12px; }
-    .divider::after { margin-left: 12px; }
   </style>
 </head>
-<script>
-  // 1. Áp dụng màu ngay khi trang vừa load để chống chớp giật giao diện
-  const savedTheme = localStorage.getItem('app-theme') || 'green';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-
-  // 2. Chờ DOM load xong để gán sự kiện cho nút chọn màu
-  document.addEventListener('DOMContentLoaded', () => {
-    const themeSelector = document.getElementById('themeSelector');
-    if (themeSelector) {
-      themeSelector.value = savedTheme; // Hiển thị đúng màu đang chọn
-      
-      themeSelector.addEventListener('change', (e) => {
-        const newTheme = e.target.value;
-        // Đổi màu ngay lập tức
-        document.documentElement.setAttribute('data-theme', newTheme);
-        // Lưu lại để các trang khác tự đồng bộ
-        localStorage.setItem('app-theme', newTheme);
-      });
-    }
-  });
-</script>
 <body>
-  <div class="auth-overlay">
-    <div class="auth-card">
-      <a href="/ui" class="close-btn" title="Trở về trang chủ">&times;</a>
-      <div class="auth-left">
-        <div class="brand">
-          <div class="logo-mark">AuraComic Studio</div>
-          <div class="brand-sub">Trở thành một phần của cộng đồng sáng tạo truyện tranh AI lớn nhất.</div>
+  <script>
+    const theme = localStorage.getItem('app-theme') || 'green';
+    document.documentElement.setAttribute('data-theme', theme);
+  </script>
+
+  <div class="auth-card">
+    <a href="/ui" class="close-btn">&times;</a>
+    <div class="auth-left">
+      <div class="logo-mark">AuraComic Studio</div>
+      <div class="brand-sub">Tham gia cộng đồng sáng tạo truyện tranh AI.</div>
+    </div>
+    <div class="auth-right">
+      <div class="auth-header">
+        <div class="toggle-tabs">
+          <span class="tab active">Tạo tài khoản</span>
+          <a class="tab" href="/login">Đăng nhập</a>
         </div>
       </div>
+      <h3>Tạo tài khoản mới</h3>
+      <p class="sub">Đăng ký để lưu trữ dự án và xuất xưởng truyện.</p>
 
-      <div class="auth-right">
-        <div class="auth-header">
-          <div class="toggle-tabs">
-            <span class="tab active">Tạo tài khoản</span>
-            <span class="tab" onclick="window.location.href='/login.html'">Đăng nhập</span>
-          </div>
+      <form class="auth-form" id="registerForm">
+        <div>
+          <label for="name">Họ và tên</label>
+          <input type="text" id="name" name="name" placeholder="Nguyễn Văn A" required />
         </div>
-
-        <div style="margin-bottom: 24px;">
-          <h3 style="margin: 0; font-size: 28px; color: var(--deep-ocean);">Tạo tài khoản mới</h3>
-          <p style="color: var(--muted); font-size: 15px; margin-top: 8px;">Đăng ký để lưu trữ dự án và xuất xưởng truyện.</p>
+        <div>
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="you@email.com" required />
         </div>
-
-        <form class="auth-form" id="registerForm">
-          <div>
-            <label>Họ và tên</label>
-            <input type="text" name="name" placeholder="Nguyễn Văn A" required />
-          </div>
-
-          <div>
-            <label>Email</label>
-            <input type="email" name="email" placeholder="you@example.com" required />
-          </div>
-
-          <div>
-            <label>Mật khẩu</label>
-            <input type="password" name="password" placeholder="Tối thiểu 6 ký tự" required />
-          </div>
-
-          <div id="formMessage" class="form-message" style="display:none;"></div>
-
-          <button class="btn primary" type="submit">Tạo tài khoản</button>
-
-          <p class="muted-text">
-            Đã có tài khoản? <a href="/login.html" class="link-bold">Đăng nhập</a>
-          </p>
-        </form>
-        
-      </div>
-      
+        <div>
+          <label for="password">Mật khẩu</label>
+          <input type="password" id="password" name="password" placeholder="Tối thiểu 6 ký tự" required />
+        </div>
+        <div id="formMessage" class="form-message"></div>
+        <button class="btn btn-primary" type="submit">Tạo tài khoản</button>
+        <p class="muted-text">Đã có tài khoản? <a href="/login" class="link-bold">Đăng nhập</a></p>
+      </form>
     </div>
   </div>
 
   <script>
-  document.addEventListener('DOMContentLoaded', function(){
-    const form = document.getElementById('registerForm');
-    
-    form.addEventListener('submit', async function(e){
-      e.preventDefault();
-      const btn = form.querySelector('button[type=submit]');
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('registerForm');
       const msg = document.getElementById('formMessage');
-      
-      msg.style.display = 'none';
-      btn.disabled = true; 
-      btn.textContent = 'Đang xử lý...';
-      
-      const name = form.querySelector('input[name="name"]').value.trim();
-      const email = form.querySelector('input[name="email"]').value.trim();
-      const password = form.querySelector('input[name="password"]').value;
-      
-      if(password.length < 6){ 
-          msg.textContent = 'Mật khẩu phải có ít nhất 6 ký tự.'; 
-          msg.style.display='block'; 
-          btn.disabled=false; 
-          btn.textContent='Tạo tài khoản'; 
-          return; 
-      }
-      
-      try {
-        // ĐÃ SỬA: Bổ sung thêm email: email vào cục payload gửi đi
-        const payload = {
-            username: email, 
-            email: email, 
-            password: password, 
-            fullname: name
-        };
-
-        const res = await fetch('/api/auth/register', {
-          method: 'POST', 
-          headers: {'Content-Type':'application/json'}, 
-          body: JSON.stringify(payload) // Gửi cục payload đã có đủ 4 thông tin
-        });
-        
-        const data = await res.json().catch(()=>({}));
-        
-        if(!res.ok){ 
-            msg.textContent = data.detail || 'Email này đã được sử dụng hoặc đăng ký thất bại.'; 
-            msg.style.display='block'; 
-            btn.disabled=false; 
-            btn.textContent='Tạo tài khoản'; 
-            return; 
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = form.querySelector('button[type=submit]');
+        msg.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = 'Đang xử lý...';
+        const name = form.querySelector('input[name="name"]').value.trim();
+        const email = form.querySelector('input[name="email"]').value.trim();
+        const password = form.querySelector('input[name="password"]').value;
+        if (password.length < 6) {
+          msg.textContent = 'Mật khẩu phải có ít nhất 6 ký tự.';
+          msg.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Tạo tài khoản';
+          return;
         }
-        
-        window.location.href = '/login.html?registered=1';
-      } catch(err) { 
-        console.error(err); 
-        msg.textContent = 'Lỗi kết nối máy chủ.'; 
-        msg.style.display='block'; 
-        btn.disabled=false; 
-        btn.textContent='Tạo tài khoản';
-      }
+        try {
+          const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: email, email, password, fullname: name })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            let errorMsg = 'Đăng ký thất bại.';
+            if (Array.isArray(data.detail)) errorMsg = data.detail.map(d => d.msg.replace('Value error, ', '')).join('<br>');
+            else if (typeof data.detail === 'string') errorMsg = data.detail;
+            msg.innerHTML = errorMsg;
+            msg.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = 'Tạo tài khoản';
+            return;
+          }
+          window.location.href = '/login?registered=1';
+        } catch (err) {
+          msg.textContent = 'Lỗi kết nối máy chủ.';
+          msg.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Tạo tài khoản';
+        }
+      });
     });
-  });
   </script>
 </body>
 </html>

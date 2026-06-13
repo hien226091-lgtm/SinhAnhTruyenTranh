@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
@@ -27,6 +28,15 @@ class RegisterRequest(BaseModel):
     password: str = Field(..., min_length=6)
     fullname: str | None = None
 
+    @field_validator("password")
+    @classmethod
+    def password_phai_manh(cls, v: str) -> str:
+        if not re.search(r"\d", v):
+            raise ValueError("Mật khẩu phải chứa ít nhất một chữ số")
+        if not re.search(r"[!@#$%^&*(),.?:\{}|<>_\-]", v):
+            raise ValueError("Mật khẩu phải chứa ít nhất một ký tự đặc biệt")
+        return v
+
 
 class RegisterResponse(BaseModel):
     message: str
@@ -36,6 +46,7 @@ class UserProfile(BaseModel):
     username: str
     email: str
     fullname: str | None = None
+    is_admin: bool = False
 
 
 class TokenResponse(BaseModel):
@@ -51,6 +62,7 @@ class ScriptAnalysisRequest(BaseModel):
     frames: int = Field(4, ge=1, le=12)
     character_description: str = ""
     layout_json: Optional[str] = None
+    title: str = "Truyện tranh tạo từ AI"
 
 
 class PanelDraft(BaseModel):

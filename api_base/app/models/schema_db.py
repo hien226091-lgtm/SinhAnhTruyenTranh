@@ -6,7 +6,7 @@ from api_base.app.models.base_db import Base
 
 class User(Base):
     __tablename__ = "users"
-    __table_args__ = {'extend_existing': True} # <-- Báo cho hệ thống biết là dùng chung bảng cũ
+    __table_args__ = {'extend_existing': True}
     
     UserID = Column(Integer, primary_key=True, index=True, autoincrement=True)
     Username = Column(String(50), unique=True, index=True)
@@ -15,6 +15,11 @@ class User(Base):
     Role = Column(String(20), default="user")
     CreatedAt = Column(DateTime, default=datetime.utcnow)
     FullName = Column(String(100), nullable=True)
+    is_banned = Column(Integer, default=0)
+    Plan = Column(String(20), default="free")       # "free" | "pro"
+    ImagesGenerated = Column(Integer, default=0)    # số ảnh đã sinh
+    UpgradedAt = Column(DateTime, nullable=True)    # thời điểm tự nâng cấp
+    TransactionRef = Column(String(100), nullable=True)  # mã giao dịch
 
     comics = relationship("Comic", back_populates="owner")
     Quota = Column(Integer, default=0)
