@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import io
+import json
 import time
+import zipfile
 from datetime import datetime
 from pathlib import Path
 from api_base.app.security.admin_deps import verify_admin
 from api_base.app.security.deps import get_current_user
 from fastapi import APIRouter, HTTPException, status, Depends, Body
 from fastapi import File, Form, UploadFile
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -16,6 +20,9 @@ from api_base.app.config import CONFIG
 from api_base.app.constants.image_options import DEFAULT_ASPECT_RATIO, aspect_ratio_to_legacy_key, normalize_aspect_ratio
 from api_base.app.models.schemas import (
     CharacterUploadResponse,
+    ComicSession,
+    FrameItem,
+    GenerationHistoryResponse,
     ImageOutput,
     PanelDraft,
     PageExportRequest,
@@ -28,6 +35,8 @@ from api_base.app.models.schemas import (
     ProductionResponse,
     ScriptAnalysisRequest,
     ScriptAnalysisResponse,
+    TopupHistoryResponse,
+    TopupRecord,
 )
 from api_base.app.utils.file_parsers import ParseFileError, extract_layout_data, extract_script_text
 from api_base.app.utils.comic_postprocess import compose_episode_page, export_pdf_from_images, write_image_manifest
@@ -338,6 +347,32 @@ def xuat_pdf(
     return PdfExportResponse(pdf_url=f"/outputs/{pdf_name}", filename=pdf_name, image_count=len(image_paths))
 
 
+@router.post("/xuat-zip")
+def xuat_zip(
+    payload: PdfExportRequest,
+    current_user: User = Depends(get_current_user)
+    ):
+    """Download selected images as a ZIP file."""
+    if not payload.images:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Chưa chọn ảnh nào để tải ZIP.")
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for item in payload.images:
+            path = _resolve_image_path(item)
+            if not path.exists():
+                continue
+            zf.write(path, arcname=path.name)
+
+    buf.seek(0)
+    zip_name = f"anh_da_chon_{time.time_ns()}.zip"
+    return StreamingResponse(
+        buf,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{zip_name}"'},
+    )
+
+
 @router.post("/xuat-trang", response_model=PageExportResponse)
 def xuat_trang(
     payload: PageExportRequest, 
@@ -463,6 +498,260 @@ def self_upgrade(
     db.commit()
     print(f"[UPGRADE] User {current_user.UserID} ({current_user.Email}) tự nâng cấp lên Pro. Ref: {transaction_ref}")
     return {"message": "Chúc mừng! Bạn đã nâng cấp lên gói Pro thành công. 🎉"}
+
+@router.get("/history", response_model=GenerationHistoryResponse)
+def generation_history(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Return generation history: comics with frames for the current user."""
+    comics = db.query(Comic).filter(Comic.UserID == current_user.UserID).order_by(Comic.CreatedAt.desc()).all()
+    sessions = []
+    for comic in comics:
+        frames = db.query(Frame).filter(Frame.ComicID == comic.ComicID).order_by(Frame.FrameOrder).all()
+        sessions.append(ComicSession(
+            comic_id=comic.ComicID,
+            title=comic.Title or "Truyện tranh",
+            created_at=str(comic.CreatedAt) if comic.CreatedAt else "",
+            frame_count=len(frames),
+            frames=[FrameItem(
+                frame_id=f.FrameID,
+                frame_order=f.FrameOrder,
+                image_url=f.GeneratedImageUrl or None,
+                description=(f.ImageDescription or "")[:120],
+            ) for f in frames],
+        ))
+    return GenerationHistoryResponse(sessions=sessions)
+
+
+@router.get("/topup-history", response_model=TopupHistoryResponse)
+def topup_history(current_user: User = Depends(get_current_user)):
+    """Return top-up/payment history for the current user."""
+    records = []
+    if current_user.UpgradedAt:
+        records.append(TopupRecord(
+            date=str(current_user.UpgradedAt),
+            plan="pro",
+            transaction_ref=current_user.TransactionRef or None,
+            amount="199.999 VNĐ",
+        ))
+    return TopupHistoryResponse(records=records)
+
+
+@router.delete("/history/{comic_id}")
+def xoa_truyen_ca_nhan(
+    comic_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a comic/session owned by the current user."""
+    comic = db.query(Comic).filter(Comic.ComicID == comic_id, Comic.UserID == current_user.UserID).first()
+    if not comic:
+        raise HTTPException(status_code=404, detail="Không tìm thấy truyện hoặc không có quyền xóa.")
+    frames = db.query(Frame).filter(Frame.ComicID == comic_id).all()
+    for f in frames:
+        db.delete(f)
+    db.delete(comic)
+    db.commit()
+    return {"message": "Đã xóa truyện thành công."}
+
+
+@router.get("/history/{comic_id}/manifest")
+def tai_manifest(
+    comic_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Return manifest JSON for a comic session."""
+    comic = db.query(Comic).filter(Comic.ComicID == comic_id, Comic.UserID == current_user.UserID).first()
+    if not comic:
+        raise HTTPException(status_code=404, detail="Không tìm thấy truyện.")
+    frames = db.query(Frame).filter(Frame.ComicID == comic_id).order_by(Frame.FrameOrder).all()
+    manifest = {
+        "comic_id": comic.ComicID,
+        "title": comic.Title or "Truyện tranh",
+        "created_at": str(comic.CreatedAt) if comic.CreatedAt else "",
+        "frames": [
+            {
+                "frame_order": f.FrameOrder,
+                "image_url": f.GeneratedImageUrl,
+                "description": f.ImageDescription,
+                "dialog_left": f.DialogLeft,
+                "dialog_right": f.DialogRight,
+                "sfx": f.SFX,
+                "aspect_ratio": f.AspectRatio,
+                "resolution": f.Resolution,
+            }
+            for f in frames
+        ],
+    }
+    manifest_json = json.dumps(manifest, ensure_ascii=False, indent=2)
+    return StreamingResponse(
+        io.BytesIO(manifest_json.encode("utf-8")),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="manifest_{comic_id}.json"'},
+    )
+
+
+# ── Admin: Cấu hình hệ thống ──
+
+CONFIG_CATEGORIES = {
+    "Vertex AI": ["VERTEX_PROJECT_ID", "VERTEX_LOCATION", "VERTEX_TEXT_MODEL", "VERTEX_IMAGE_MODELS", "VERTEX_CREDENTIALS_FILE"],
+    "Google AI": ["GOOGLE_AI_API_KEY", "GEMINI_IMAGE_MODELS", "GEMINI_IMAGE_SIZE"],
+    "Xác thực": ["JWT_SECRET", "JWT_ALGORITHM", "JWT_EXPIRE_MINUTES", "ADMIN_USERNAME", "ADMIN_PASSWORD_HASH", "PASSWORD_SALT"],
+    "OAuth": ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET", "OAUTH_REDIRECT_BASE"],
+    "Khác": ["ALLOWED_ORIGINS"],
+}
+
+_ENV_PATH = CONFIG.base_dir / ".env"
+
+
+def _validate_vertex_config(values: dict) -> list[str]:
+    """Kiểm tra cấu hình Vertex AI và trả về danh sách lỗi."""
+    errors: list[str] = []
+    project = values.get("VERTEX_PROJECT_ID", "").strip()
+    location = values.get("VERTEX_LOCATION", "").strip()
+    cred_file = values.get("VERTEX_CREDENTIALS_FILE", "").strip()
+
+    if not project:
+        errors.append("Vertex AI: VERTEX_PROJECT_ID đang để trống.")
+    if not location:
+        errors.append("Vertex AI: VERTEX_LOCATION đang để trống.")
+
+    if cred_file:
+        cred_path = Path(cred_file).expanduser()
+        if not cred_path.exists():
+            errors.append(f"Vertex AI: File credentials không tồn tại ({cred_file}).")
+        elif not cred_path.is_file():
+            errors.append(f"Vertex AI: Đường dẫn credentials không phải là file ({cred_file}).")
+
+    # Thử kết nối nếu có đủ thông tin
+    if project and location:
+        try:
+            from google import genai
+            kwargs: dict = {"vertexai": True, "project": project, "location": location}
+            if cred_file:
+                from google.oauth2 import service_account
+                cred_path = Path(cred_file).expanduser()
+                if cred_path.exists():
+                    kwargs["credentials"] = service_account.Credentials.from_service_account_file(str(cred_path))
+            client = genai.Client(**kwargs)
+            # Thử gọi API nhẹ để kiểm tra kết nối thực tế
+            for m in client.models.list():
+                break
+        except Exception as e:
+            msg = str(e)
+            if "403" in msg or "permission" in msg.lower():
+                errors.append(f"Vertex AI: Không có quyền truy cập — kiểm tra credentials hoặc tài khoản service.")
+            elif "404" in msg or "not found" in msg.lower():
+                errors.append(f"Vertex AI: Project không tồn tại hoặc location không đúng.")
+            elif "401" in msg or "unauthorized" in msg.lower():
+                errors.append(f"Vertex AI: Xác thực thất bại — credentials không hợp lệ.")
+            else:
+                errors.append(f"Vertex AI: {msg}")
+    return errors
+
+
+def _validate_google_ai_config(values: dict) -> list[str]:
+    """Kiểm tra cấu hình Google AI API key."""
+    errors: list[str] = []
+    api_key = values.get("GOOGLE_AI_API_KEY", "").strip()
+    if api_key:
+        if len(api_key) < 10:
+            errors.append("Google AI: API key có vẻ không hợp lệ (quá ngắn).")
+        elif not api_key.startswith("AI"):
+            errors.append("Google AI: API key thường bắt đầu bằng 'AI' — kiểm tra lại.")
+    return errors
+
+
+def _validate_oauth_config(values: dict) -> list[str]:
+    """Kiểm tra định dạng OAuth URLs."""
+    errors: list[str] = []
+    redirect = values.get("OAUTH_REDIRECT_BASE", "").strip()
+    if redirect and not redirect.startswith("http"):
+        errors.append("OAuth: OAUTH_REDIRECT_BASE phải bắt đầu bằng http:// hoặc https://.")
+    return errors
+
+
+def _validate_env_config(values: dict) -> list[str]:
+    """Kiểm tra toàn bộ cấu hình .env và trả về danh sách lỗi."""
+    all_errors: list[str] = []
+    all_errors.extend(_validate_vertex_config(values))
+    all_errors.extend(_validate_google_ai_config(values))
+    all_errors.extend(_validate_oauth_config(values))
+
+    # Kiểm tra JWT secret còn mặc định
+    jwt = values.get("JWT_SECRET", "").strip()
+    if jwt in ("change-me", ""):
+        all_errors.append("Xác thực: JWT_SECRET đang để mặc định 'change-me' — nên thay đổi để bảo mật.")
+    return all_errors
+
+
+@router.get("/admin/config")
+def admin_get_config(admin: User = Depends(verify_admin)):
+    """Read .env file and return config values."""
+    config: dict[str, str] = {}
+    if _ENV_PATH.exists():
+        for line in _ENV_PATH.read_text("utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, val = line.partition("=")
+            config[key.strip()] = val.strip().strip('"').strip("'")
+    return {"config": config, "categories": CONFIG_CATEGORIES}
+
+
+@router.post("/admin/config")
+def admin_save_config(
+    body: dict,
+    admin: User = Depends(verify_admin),
+):
+    """Update .env file and validate API configuration."""
+    updates = body.get("config", {})
+    if not _ENV_PATH.exists():
+        raise HTTPException(status_code=404, detail="File .env không tồn tại.")
+
+    # Ghi file
+    lines = _ENV_PATH.read_text("utf-8").splitlines()
+    new_lines: list[str] = []
+    updated_keys: set[str] = set()
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            new_lines.append(line)
+            continue
+        key, _, _ = stripped.partition("=")
+        key = key.strip()
+        if key in updates:
+            new_lines.append(f"{key}={updates[key]}")
+            updated_keys.add(key)
+        else:
+            new_lines.append(line)
+
+    for key, val in updates.items():
+        if key not in updated_keys:
+            new_lines.append(f"{key}={val}")
+
+    _ENV_PATH.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+
+    # Validate sau khi lưu
+    merged = dict(updates)
+    for line in new_lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            continue
+        key, _, val = stripped.partition("=")
+        key = key.strip()
+        if key not in merged:
+            merged[key] = val.strip().strip('"').strip("'")
+
+    warnings = _validate_env_config(merged)
+
+    message = "Đã lưu cấu hình. Khởi động lại server để áp dụng thay đổi."
+    if not warnings:
+        message += " Kiểm tra kết nối OK."
+    else:
+        message += " Có cảnh báo:"
+    return {"message": message, "updated": list(updates.keys()), "warnings": warnings}
+
 
 # API lấy nhật ký hệ thống (để xem User nào vẽ nhiều nhất)
 @router.get("/admin/logs")

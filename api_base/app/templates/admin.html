@@ -84,9 +84,16 @@
     @media (max-width:768px) {
       .sidebar { transform:translateX(-100%); }
       .sidebar.open { transform:translateX(0); }
-      .main { margin-left:0; max-width:100vw; padding:16px; }
+      .main { margin-left:0; max-width:100vw; padding:12px; }
       .menu-toggle { display:block; }
       .stats-grid { grid-template-columns:repeat(2,1fr); }
+      .main-header h1 { font-size:18px; }
+      .main-header p { font-size:12px; }
+      .tabs { gap:2px; }
+      .tabs button { padding:7px 8px; font-size:11px; min-width:0; }
+      .card-body { padding:12px; }
+      .card-header { padding:10px 12px; }
+      .card-header h5 { font-size:13px; }
     }
   </style>
 </head>
@@ -109,6 +116,7 @@
       <a href="#" data-tab="users"><i class="fas fa-users"></i> Người dùng</a>
       <a href="#" data-tab="comics"><i class="fas fa-book-open"></i> Truyện</a>
       <a href="#" data-tab="logs"><i class="fas fa-history"></i> Nhật ký</a>
+      <a href="#" data-tab="config"><i class="fas fa-cog"></i> Cấu hình</a>
       <a href="/ui"><i class="fas fa-arrow-left"></i> Về Studio</a>
     </nav>
     <div class="sidebar-footer">
@@ -146,6 +154,7 @@
       <button data-tab="users"><i class="fas fa-users"></i> Người dùng</button>
       <button data-tab="comics"><i class="fas fa-book-open"></i> Truyện</button>
       <button data-tab="logs"><i class="fas fa-history"></i> Nhật ký</button>
+      <button data-tab="config"><i class="fas fa-cog"></i> Cấu hình</button>
     </div>
 
     <!-- Tab Content -->
@@ -196,6 +205,18 @@
         <div class="card-body" id="logsContainer"><div class="empty-state"><i class="fas fa-inbox"></i><p>Chưa có nhật ký</p></div></div>
       </div>
     </div>
+
+    <div class="panel" id="panel-config">
+      <div class="card">
+        <div class="card-header">
+          <h5><i class="fas fa-cog"></i> Cấu hình hệ thống</h5>
+          <span style="font-size:11px;color:var(--text-muted)"><i class="fas fa-info-circle"></i> Thay đổi sẽ ghi vào .env — khởi động lại server để áp dụng</span>
+        </div>
+        <div class="card-body" id="configContainer">
+          <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Đang tải cấu hình...</p></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Modals -->
@@ -238,6 +259,7 @@
       document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.toggle('active', a.dataset.tab === tab));
       if (tab === 'comics') loadComics();
       if (tab === 'logs') loadLogs();
+      if (tab === 'config') loadConfig();
       document.getElementById('sidebar').classList.remove('open');
     }
     document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
@@ -368,6 +390,67 @@
       await fetch('/api/comic/admin/upgrade/' + id + '?plan=' + plan, { method: 'POST', headers: { Authorization: 'Bearer ' + token }});
       loadUsers();
     }
+
+    // ── Config ──
+    let configData = {};
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/comic/admin/config', { headers: { Authorization: 'Bearer ' + token }});
+        const data = await res.json();
+        configData = data.config || {};
+        const cats = data.categories || {};
+        const container = document.getElementById('configContainer');
+        let html = '';
+        for (const [cat, keys] of Object.entries(cats)) {
+          html += `<div style="margin-bottom:18px"><h6 style="font-size:13px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px"><i class="fas fa-folder"></i> ${cat}</h6><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">`;
+          for (const key of keys) {
+            const val = configData[key] || '';
+            const isSecret = key.toLowerCase().includes('secret') || key.toLowerCase().includes('password') || key.toLowerCase().includes('salt') || key.toLowerCase().includes('api_key');
+            html += `<div style="background:var(--bg);border-radius:6px;padding:10px 12px;border:1px solid var(--border)">
+              <label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:3px">${esc(key)}</label>
+              <input type="${isSecret ? 'password' : 'text'}" class="config-input" data-key="${esc(key)}" value="${esc(val)}" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:#fff;color:#333;outline:none;font-family:monospace" ${isSecret ? 'spellcheck="false"' : ''} />
+            </div>`;
+          }
+          html += `</div></div>`;
+        }
+        html += `<div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+          <button class="btn btn-primary" onclick="saveConfig()"><i class="fas fa-save"></i> Lưu cấu hình</button>
+          <span id="configStatus" style="font-size:12px;color:var(--text-secondary)"></span>
+        </div>`;
+        container.innerHTML = html;
+      } catch(e) {
+        document.getElementById('configContainer').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Không thể tải cấu hình</p></div>';
+        console.error(e);
+      }
+    }
+    async function saveConfig() {
+      const inputs = document.querySelectorAll('.config-input');
+      const updates = {};
+      inputs.forEach(inp => { updates[inp.dataset.key] = inp.value; });
+      const status = document.getElementById('configStatus');
+      status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu & kiểm tra kết nối...';
+      try {
+        const res = await fetch('/api/comic/admin/config', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config: updates })
+        });
+        const data = await res.json();
+        let html = '<i class="fas fa-check-circle" style="color:var(--success)"></i> ' + data.message;
+        if (data.warnings && data.warnings.length) {
+          html += '<div style="margin-top:8px;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:10px 12px;font-size:12px;color:#856404">';
+          data.warnings.forEach(w => { html += '<div style="margin-bottom:4px">⚠️ ' + esc(w) + '</div>'; });
+          html += '</div>';
+        }
+        status.innerHTML = html;
+      } catch(e) {
+        status.innerHTML = '<i class="fas fa-times-circle" style="color:var(--danger)"></i> Lỗi khi lưu cấu hình';
+        console.error(e);
+      }
+    }
+    document.querySelectorAll('.tabs button').forEach(b => {
+      if (b.dataset.tab === 'config') b.addEventListener('click', () => { setTimeout(loadConfig, 50); });
+    });
 
     // Init
     loadStats();

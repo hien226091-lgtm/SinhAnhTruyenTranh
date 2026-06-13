@@ -134,6 +134,48 @@
           </article>
         </div>
       </div>
+
+      <!-- Profile Section -->
+      <div class="studio-card" id="profileSection" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h2 style="margin:0">👤 Thông tin tài khoản</h2>
+          <button class="btn btn-ghost" id="closeProfileBtn" style="border:1px solid var(--border)">← Quay lại Studio</button>
+        </div>
+        <div class="profile-tabs">
+          <div class="tab-bar" id="profileTabBar">
+            <button class="tab-btn active" data-tab="info">Thông tin</button>
+            <button class="tab-btn" data-tab="password">Đổi mật khẩu</button>
+            <button class="tab-btn" data-tab="topup">Lịch sử nạp tiền</button>
+            <button class="tab-btn" data-tab="history">Lịch sử tạo ảnh</button>
+          </div>
+          <div class="tab-content active" id="tabInfo">
+            <div id="profileInfo"><p class="muted">Đang tải...</p></div>
+          </div>
+          <div class="tab-content" id="tabPassword">
+            <form id="changePasswordForm" style="max-width:400px">
+              <div class="mb-16">
+                <label class="form-label">Mật khẩu cũ</label>
+                <input type="password" id="oldPassword" class="form-input" required />
+              </div>
+              <div class="mb-16">
+                <label class="form-label">Mật khẩu mới</label>
+                <input type="password" id="newPassword" class="form-input" required minlength="6" />
+              </div>
+              <div class="mb-16">
+                <label class="form-label">Xác nhận mật khẩu mới</label>
+                <input type="password" id="confirmPassword" class="form-input" required minlength="6" />
+              </div>
+              <button type="submit" class="btn btn-primary" id="changePasswordBtn">Đổi mật khẩu</button>
+            </form>
+          </div>
+          <div class="tab-content" id="tabTopup">
+            <div id="topupHistory"><p class="muted">Đang tải...</p></div>
+          </div>
+          <div class="tab-content" id="tabHistory">
+            <div id="generationHistory"><p class="muted">Đang tải...</p></div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <footer class="footer">
@@ -207,6 +249,19 @@
         <button class="btn btn-outline" id="cancelLogout">Hủy</button>
         <button class="btn btn-danger" id="confirmLogout">Đăng xuất</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Frame Preview Popup -->
+  <div class="frame-preview-overlay" id="framePreview" style="display:none">
+    <div class="frame-preview-container">
+      <button class="frame-preview-close" id="framePreviewClose" title="Đóng (Esc)">×</button>
+      <button class="frame-preview-nav frame-preview-prev" id="framePreviewPrev" title="Ảnh trước (←)">‹</button>
+      <div class="frame-preview-body">
+        <img id="framePreviewImg" src="" alt="Preview" />
+      </div>
+      <button class="frame-preview-nav frame-preview-next" id="framePreviewNext" title="Ảnh tiếp (→)">›</button>
+      <div class="frame-preview-counter" id="framePreviewCounter"></div>
     </div>
   </div>
 

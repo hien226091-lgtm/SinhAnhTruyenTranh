@@ -14,7 +14,16 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
-from api_base.app.models.schemas import LoginRequest, TokenResponse, RegisterRequest, RegisterResponse, UserProfile
+from api_base.app.models.schemas import (
+    ChangePasswordRequest,
+    LoginRequest,
+    RegisterRequest,
+    RegisterResponse,
+    TokenResponse,
+    UpdateProfileRequest,
+    UserDetailResponse,
+    UserProfile,
+)
 from api_base.app.security.security import create_access_token, decode_access_token, verify_password, hash_password
 from api_base.app.config import CONFIG
 from api_base.app.models.base_db import get_db
@@ -219,7 +228,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> Registe
     # Treat username as email in this app's UI
     existing = db.query(User).filter((User.Username == payload.username) | (User.Email == payload.username)).first()
     if existing:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User with that email already exists")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email này đã được đăng ký, vui lòng dùng email khác hoặc đăng nhập.")
 
     new_user = User(
         Username=payload.username,
@@ -257,6 +266,7 @@ def me(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()), db: Se
         is_admin=is_admin,
     )
 
+
 # HÀM XÁC THỰC NGƯỜI DÙNG (Cổng an ninh)
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()), db: Session = Depends(get_db)) -> User:
     """Extracts and validates the token, then returns the User object."""
@@ -272,3 +282,52 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(HTTPBea
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Người dùng không tồn tại")
     
     return user
+
+
+@router.get("/me/chi-tiet", response_model=UserDetailResponse)
+def me_chi_tiet(current_user: User = Depends(get_current_user)) -> UserDetailResponse:
+    """Return detailed profile for the current user."""
+    return UserDetailResponse(
+        username=current_user.Username,
+        email=current_user.Email,
+        fullname=current_user.FullName or None,
+        is_admin=(current_user.Role == "admin"),
+        plan=current_user.Plan or "free",
+        images_generated=current_user.ImagesGenerated or 0,
+        created_at=str(current_user.CreatedAt) if current_user.CreatedAt else "",
+        upgraded_at=str(current_user.UpgradedAt) if current_user.UpgradedAt else None,
+        transaction_ref=current_user.TransactionRef or None,
+        quota=current_user.Quota or 0,
+    )
+
+
+@router.post("/change-password")
+def change_password(
+    payload: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Change the current user's password."""
+    stored = current_user.PasswordHash or ""
+    if not verify_password(payload.old_password, stored) and stored != payload.old_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Mật khẩu cũ không đúng.")
+    if len(payload.new_password) < 6:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Mật khẩu mới phải có ít nhất 6 ký tự.")
+    current_user.PasswordHash = hash_password(payload.new_password)
+    db.add(current_user)
+    db.commit()
+    return {"message": "Đã đổi mật khẩu thành công."}
+
+
+@router.put("/profile")
+def update_profile(
+    payload: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Update the current user's profile (fullname)."""
+    if payload.fullname is not None:
+        current_user.FullName = payload.fullname.strip() or None
+    db.add(current_user)
+    db.commit()
+    return {"message": "Đã cập nhật thông tin."}

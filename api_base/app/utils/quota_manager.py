@@ -13,7 +13,7 @@ from api_base.app.models.schema_db import RequestLog, User
 
 FREE_PLAN_LIMIT = 20
 PRO_PLAN_LIMIT = 9999
-MAX_REQUESTS_PER_MINUTE = 5
+MAX_REQUESTS_PER_MINUTE = 20
 
 
 def get_plan_limit(plan: str) -> int:
@@ -23,12 +23,21 @@ def get_plan_limit(plan: str) -> int:
     return FREE_PLAN_LIMIT
 
 
+def _cleanup_old_logs(db: Session) -> None:
+    """Xoá log cũ hơn 2 phút để giữ bảng nhẹ."""
+    cutoff = datetime.now() - timedelta(minutes=2)
+    db.query(RequestLog).filter(RequestLog.Timestamp < cutoff).delete()
+    db.commit()
+
+
 def check_quota_and_log(db: Session, user_id: int, model_name: str) -> bool:
     """
     Check rate-limit quota (requests/minute).
     Returns False if user exceeded rate limit.
     """
-    one_minute_ago = datetime.utcnow() - timedelta(minutes=1)
+    _cleanup_old_logs(db)
+    # Dùng datetime.now() để khớp với func.now() trong DB (cùng local timezone)
+    one_minute_ago = datetime.now() - timedelta(minutes=1)
     count = db.query(RequestLog).filter(
         RequestLog.UserID == user_id,
         RequestLog.Timestamp >= one_minute_ago

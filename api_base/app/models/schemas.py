@@ -177,3 +177,55 @@ class UploadResponse(BaseModel):
     """Response payload for file uploads."""
     filename: str
     url: str
+
+
+class UserDetailResponse(BaseModel):
+    username: str
+    email: str
+    fullname: str | None = None
+    is_admin: bool = False
+    plan: str = "free"
+    images_generated: int = 0
+    created_at: str = ""
+    upgraded_at: str | None = None
+    transaction_ref: str | None = None
+    quota: int = 0
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=6)
+
+
+class UpdateProfileRequest(BaseModel):
+    fullname: str | None = None
+
+
+class TopupRecord(BaseModel):
+    date: str
+    plan: str
+    transaction_ref: str | None = None
+    amount: str = ""
+
+
+class TopupHistoryResponse(BaseModel):
+    records: list[TopupRecord]
+
+
+class FrameItem(BaseModel):
+    frame_id: int
+    frame_order: int
+    image_url: str | None = None
+    description: str = ""
+
+
+class ComicSession(BaseModel):
+    comic_id: int
+    title: str
+    created_at: str
+    frame_count: int
+    frames: list[FrameItem] = []
+
+
+class GenerationHistoryResponse(BaseModel):
+    sessions: list[ComicSession]
